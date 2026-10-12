@@ -13,6 +13,7 @@ import { rollInitiativeForSystem } from '../../utils/dice';
 import { ConditionPickerModal } from './ConditionPickerModal';
 import { HpAdjustModal } from './HpAdjustModal';
 import { AddCombatantModal } from './AddCombatantModal';
+import { PartySelectionModal } from './PartySelectionModal';
 import {
   Play,
   RotateCcw,
@@ -57,6 +58,7 @@ export const CombatTrackerView: React.FC<Props> = ({
   const [conditionModalCombatant, setConditionModalCombatant] = useState<Combatant | null>(null);
   const [isAddCombatantOpen, setIsAddCombatantOpen] = useState(false);
   const [isLoadEncounterOpen, setIsLoadEncounterOpen] = useState(false);
+  const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
 
   // View preferences
   const [showDefeated, setShowDefeated] = useState(true);
@@ -112,16 +114,14 @@ export const CombatTrackerView: React.FC<Props> = ({
     return newState;
   };
 
-  // Add party into combat
-  const handleLoadParty = () => {
+  // Add specific party members into combat
+  const handleAddPartyMembers = (membersToAdd: PartyMember[]) => {
     const state = ensureCombatState();
-    const existingIds = new Set(state.combatants.map((c) => c.sourcePartyMemberId));
     const newCombatants: Combatant[] = [];
 
-    party.forEach((hero) => {
-      if (existingIds.has(hero.id)) return;
+    membersToAdd.forEach((hero) => {
       newCombatants.push({
-        id: `hero-${hero.id}-${Date.now()}`,
+        id: `hero-${hero.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         name: hero.name,
         type: 'player',
         initiative: hero.initiativeModifier,
@@ -142,12 +142,21 @@ export const CombatTrackerView: React.FC<Props> = ({
 
     if (newCombatants.length === 0) return;
 
+    let updatedCombatants = [...state.combatants, ...newCombatants];
+    if (state.isActive) {
+      updatedCombatants.sort((a, b) => b.initiative - a.initiative);
+    }
+
+    const heroNames = membersToAdd.map((m) => m.name).join(', ');
     const newLog = [
       {
         id: String(Date.now()),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         round: state.round,
-        message: `Партия игроков (${newCombatants.length} героев) добавлена в бой`,
+        message:
+          membersToAdd.length === 1
+            ? `Герой ${heroNames} добавлен в бой`
+            : `Герои (${heroNames}) добавлены в бой`,
         type: 'system' as const,
       },
       ...state.log,
@@ -155,7 +164,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
     onUpdateCombatState({
       ...state,
-      combatants: [...state.combatants, ...newCombatants],
+      combatants: updatedCombatants,
       log: newLog,
     });
   };
@@ -565,9 +574,9 @@ export const CombatTrackerView: React.FC<Props> = ({
         {/* Quick Top Actions */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={handleLoadParty}
+            onClick={() => setIsPartyModalOpen(true)}
             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
-            title="Добавить всех участников партии"
+            title="Выбрать персонажей партии для добавления в бой"
           >
             <Users className="w-3.5 h-3.5 text-blue-400" />
             + Партия ({party.length})
@@ -610,15 +619,15 @@ export const CombatTrackerView: React.FC<Props> = ({
           <div>
             <h3 className="text-lg font-bold text-slate-200 font-rpg">Боевой стол пуст</h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
-              Начните бой: добавьте постоянную партию игроков, выберите заготовленный энкаунтер или введите участников вручную!
+              Начните бой: добавьте персонажей партии игроков, выберите заготовленный энкаунтер или введите участников вручную!
             </p>
           </div>
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
-              onClick={handleLoadParty}
+              onClick={() => setIsPartyModalOpen(true)}
               className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow"
             >
-              <Users className="w-4 h-4" /> Добавить партию ({party.length})
+              <Users className="w-4 h-4" /> Выбрать героев партии ({party.length})
             </button>
             <button
               onClick={() => setIsLoadEncounterOpen(true)}
@@ -1191,6 +1200,7 @@ export const CombatTrackerView: React.FC<Props> = ({
         isOpen={isAddCombatantOpen}
         onClose={() => setIsAddCombatantOpen(false)}
         templates={templates}
+        party={party}
         diceSystem={combatState?.diceSystem || 'd20'}
         onAddCombatants={(newOnes) => {
           const state = ensureCombatState();
@@ -1199,6 +1209,14 @@ export const CombatTrackerView: React.FC<Props> = ({
             combatants: [...state.combatants, ...newOnes],
           });
         }}
+      />
+
+      <PartySelectionModal
+        isOpen={isPartyModalOpen}
+        onClose={() => setIsPartyModalOpen(false)}
+        party={party}
+        combatants={combatState?.combatants || []}
+        onAddPartyMembers={handleAddPartyMembers}
       />
 
       {/* Quick Load Encounter Modal */}

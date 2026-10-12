@@ -289,6 +289,63 @@ export const App: React.FC = () => {
     setActiveTab('combat');
   };
 
+  const combatantPartyIds = new Set(
+    (combatState?.combatants || []).map((c) => c.sourcePartyMemberId).filter(Boolean) as string[]
+  );
+
+  const handleAddHeroToCombat = (hero: PartyMember) => {
+    const state = combatState || {
+      isActive: false,
+      round: 1,
+      currentTurnIndex: 0,
+      combatants: [],
+      log: [],
+      diceSystem: 'd20',
+    };
+
+    const newCombatant: Combatant = {
+      id: `hero-${hero.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      name: hero.name,
+      type: 'player',
+      initiative: hero.initiativeModifier,
+      initiativeModifier: hero.initiativeModifier,
+      hp: {
+        current: hero.currentHp,
+        max: hero.maxHp,
+        temp: 0,
+      },
+      armorClass: hero.armorClass,
+      conditions: [],
+      notes: hero.notes || '',
+      isDefeated: hero.currentHp <= 0,
+      isDelayed: false,
+      sourcePartyMemberId: hero.id,
+    };
+
+    let updatedCombatants = [...state.combatants, newCombatant];
+    if (state.isActive) {
+      updatedCombatants.sort((a, b) => b.initiative - a.initiative);
+    }
+
+    const newLog = [
+      {
+        id: String(Date.now()),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        round: state.round,
+        message: `Герой ${hero.name} добавлен в бой из вкладки партии`,
+        type: 'system' as const,
+      },
+      ...state.log,
+    ];
+
+    handleUpdateCombatState({
+      ...state,
+      combatants: updatedCombatants,
+      log: newLog,
+    });
+    setActiveTab('combat');
+  };
+
   return (
     <div
       data-theme={currentTheme}
@@ -348,6 +405,8 @@ export const App: React.FC = () => {
             onSaveMember={handleSavePartyMember}
             onDeleteMember={handleDeletePartyMember}
             onHealAll={handleHealAllParty}
+            onAddToCombat={handleAddHeroToCombat}
+            combatantPartyIds={combatantPartyIds}
           />
         )}
       </main>

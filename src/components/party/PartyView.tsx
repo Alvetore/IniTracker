@@ -12,6 +12,8 @@ import {
   Coffee,
   Users,
   Sparkles,
+  Check,
+  Swords,
 } from 'lucide-react';
 
 interface Props {
@@ -19,6 +21,8 @@ interface Props {
   onSaveMember: (member: PartyMember) => void;
   onDeleteMember: (id: string) => void;
   onHealAll: () => void;
+  onAddToCombat?: (member: PartyMember) => void;
+  combatantPartyIds?: Set<string>;
 }
 
 export const PartyView: React.FC<Props> = ({
@@ -26,6 +30,8 @@ export const PartyView: React.FC<Props> = ({
   onSaveMember,
   onDeleteMember,
   onHealAll,
+  onAddToCombat,
+  combatantPartyIds,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<PartyMember | null>(null);
@@ -191,6 +197,26 @@ export const PartyView: React.FC<Props> = ({
                   {hero.notes && (
                     <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/50 text-xs text-slate-300 font-mono whitespace-pre-line line-clamp-2">
                       {hero.notes}
+                    </div>
+                  )}
+
+                  {/* Add to combat action */}
+                  {onAddToCombat && (
+                    <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between">
+                      {combatantPartyIds?.has(hero.id) ? (
+                        <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> В активном бою
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-500">Не в бою</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onAddToCombat(hero)}
+                        className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 rounded-lg text-xs font-semibold transition flex items-center gap-1"
+                      >
+                        <Swords className="w-3 h-3" /> + В бой
+                      </button>
                     </div>
                   )}
                 </div>

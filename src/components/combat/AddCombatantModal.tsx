@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Combatant, CreatureTemplate, CreatureType, DiceSystem } from '../../types';
+import { Combatant, CreatureTemplate, CreatureType, PartyMember, DiceSystem } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
-import { X, UserPlus, Sparkles, Plus } from 'lucide-react';
+import { X, UserPlus, Sparkles, Plus, Users } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   templates: CreatureTemplate[];
+  party?: PartyMember[];
   diceSystem: DiceSystem;
   onAddCombatants: (combatants: Combatant[]) => void;
 }
@@ -15,21 +16,28 @@ export const AddCombatantModal: React.FC<Props> = ({
   isOpen,
   onClose,
   templates,
+  party = [],
   diceSystem,
   onAddCombatants,
 }) => {
-  const [mode, setMode] = useState<'template' | 'custom'>('template');
+  const [mode, setMode] = useState<'template' | 'party' | 'custom'>('template');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [selectedPartyId, setSelectedPartyId] = useState<string>('');
   const [count, setCount] = useState<number>(1);
 
-  // Sync selectedTemplateId whenever modal opens or templates change
+  // Sync selected IDs whenever modal opens or lists change
   useEffect(() => {
     if (templates.length > 0) {
       if (!selectedTemplateId || !templates.some((t) => t.id === selectedTemplateId)) {
         setSelectedTemplateId(templates[0].id);
       }
     }
-  }, [isOpen, templates]);
+    if (party.length > 0) {
+      if (!selectedPartyId || !party.some((p) => p.id === selectedPartyId)) {
+        setSelectedPartyId(party[0].id);
+      }
+    }
+  }, [isOpen, templates, party]);
 
   // Custom fields
   const [customName, setCustomName] = useState('');
@@ -71,6 +79,34 @@ export const AddCombatantModal: React.FC<Props> = ({
           isDefeated: false,
           isDelayed: false,
           templateId: tpl.id,
+        });
+      }
+    } else if (mode === 'party') {
+      const targetId = selectedPartyId || (party.length > 0 ? party[0].id : '');
+      const hero = party.find((p) => p.id === targetId) || party[0];
+      if (!hero) return;
+
+      for (let i = 1; i <= count; i++) {
+        const name = count > 1 ? `${hero.name} ${i}` : hero.name;
+        const { total: initVal } = rollInitiativeForSystem(diceSystem, hero.initiativeModifier);
+
+        newCombatants.push({
+          id: `hero-${hero.id}-${Date.now()}-${i}`,
+          name,
+          type: 'player',
+          initiative: initVal,
+          initiativeModifier: hero.initiativeModifier,
+          hp: {
+            current: hero.currentHp,
+            max: hero.maxHp,
+            temp: 0,
+          },
+          armorClass: hero.armorClass,
+          conditions: [],
+          notes: hero.notes || '',
+          isDefeated: hero.currentHp <= 0,
+          isDelayed: false,
+          sourcePartyMemberId: hero.id,
         });
       }
     } else {
@@ -122,8 +158,8 @@ export const AddCombatantModal: React.FC<Props> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Mode Switch */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          {/* Mode Switch (3 options: template, party, custom) */}
+          <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
             <button
               type="button"
               onClick={() => setMode('template')}
@@ -134,7 +170,19 @@ export const AddCombatantModal: React.FC<Props> = ({
                   : 'text-slate-400 hover:text-white disabled:opacity-40'
               }`}
             >
-              Из шаблона существ
+              Бестиарий
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('party')}
+              disabled={party.length === 0}
+              className={`py-1.5 rounded-lg text-xs font-semibold transition ${
+                mode === 'party'
+                  ? 'bg-blue-500 text-white shadow'
+                  : 'text-slate-400 hover:text-white disabled:opacity-40'
+              }`}
+            >
+              Герой партии
             </button>
             <button
               type="button"
@@ -143,14 +191,15 @@ export const AddCombatantModal: React.FC<Props> = ({
                 mode === 'custom' ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Создать вручную
+              Вручную
             </button>
           </div>
 
+          {/* Mode 1: Template */}
           {mode === 'template' && (
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                Выберите существо
+                Выберите существо из бестиария
               </label>
               <select
                 value={selectedTemplateId}
@@ -166,6 +215,27 @@ export const AddCombatantModal: React.FC<Props> = ({
             </div>
           )}
 
+          {/* Mode 2: Party */}
+          {mode === 'party' && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                Выберите персонажа игрока
+              </label>
+              <select
+                value={selectedPartyId}
+                onChange={(e) => setSelectedPartyId(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+              >
+                {party.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.playerName ? `(${p.playerName})` : ''} — HP: {p.currentHp}/{p.maxHp}, КД: {p.armorClass}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Mode 3: Custom */}
           {mode === 'custom' && (
             <div className="space-y-3">
               <div>
@@ -218,10 +288,10 @@ export const AddCombatantModal: React.FC<Props> = ({
           {/* Count */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              Количество существ (автонумерация при &gt; 1)
+              Количество (автонумерация при &gt; 1)
             </label>
             <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 6].map((num) => (
+              {[1, 2, 3, 4].map((num) => (
                 <button
                   key={num}
                   type="button"
