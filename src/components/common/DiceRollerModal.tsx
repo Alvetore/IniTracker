@@ -53,10 +53,10 @@ export const DiceRollerModal: React.FC<Props> = ({ isOpen, onClose, onLogRoll })
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
             <Dices className="w-5 h-5 text-amber-400" />
-            <h3 className="text-base font-bold text-white font-rpg">Броски кубиков</h3>
+            <h3 className="text-sm sm:text-base font-bold text-white font-rpg">Броски кубиков</h3>
           </div>
           <button
             onClick={onClose}
@@ -66,7 +66,7 @@ export const DiceRollerModal: React.FC<Props> = ({ isOpen, onClose, onLogRoll })
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4">
           {/* Big Result Display */}
           <div className="py-4 bg-slate-950 rounded-2xl border border-slate-800 text-center relative overflow-hidden">
             <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">

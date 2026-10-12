@@ -60,13 +60,13 @@ export const PartySelectionModal: React.FC<Props> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white font-rpg tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-white font-rpg tracking-wide">
                 Добавить героев партии в бой
               </h2>
               <p className="text-xs text-slate-400">
@@ -83,7 +83,7 @@ export const PartySelectionModal: React.FC<Props> = ({
         </div>
 
         {/* Quick Batch Bar */}
-        <div className="px-6 py-3 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between gap-2.5 flex-wrap">
           <span className="text-xs text-slate-400">
             В партии {party.length} героев ({availableCount} еще не в бою)
           </span>
@@ -112,7 +112,7 @@ export const PartySelectionModal: React.FC<Props> = ({
         </div>
 
         {/* Party Members List */}
-        <div className="p-6 overflow-y-auto space-y-2.5 flex-1">
+        <div className="p-3.5 sm:p-6 overflow-y-auto space-y-2.5 flex-1">
           {party.length === 0 ? (
             <div className="text-center py-10 text-slate-500 text-xs">
               В партии пока нет персонажей. Создайте их во вкладке «Партия».

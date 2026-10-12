@@ -67,10 +67,10 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
             <FileJson className="w-5 h-5 text-amber-400" />
-            <h3 className="text-base font-bold text-white font-rpg">Управление данными и Бэкап</h3>
+            <h3 className="text-sm sm:text-base font-bold text-white font-rpg">Управление данными и Бэкап</h3>
           </div>
           <button
             onClick={onClose}
@@ -80,7 +80,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4">
           {statusMsg && (
             <div
               className={`p-3 rounded-xl text-xs flex items-center gap-2 ${

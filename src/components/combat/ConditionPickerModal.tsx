@@ -50,11 +50,11 @@ export const ConditionPickerModal: React.FC<Props> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-400" />
             <div>
-              <h3 className="text-base font-bold text-white font-rpg">
+              <h3 className="text-sm sm:text-base font-bold text-white font-rpg">
                 Добавить состояние: {combatant.name}
               </h3>
               <p className="text-xs text-slate-400">Выберите стандартный эффект или введите свой</p>
@@ -68,7 +68,7 @@ export const ConditionPickerModal: React.FC<Props> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 max-h-[80vh] overflow-y-auto">
           {/* Standard Conditions Grid */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">

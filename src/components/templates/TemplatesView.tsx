@@ -85,11 +85,11 @@ export const TemplatesView: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-slate-900/60 border border-slate-800/80 p-3.5 sm:p-5 rounded-2xl">
         <div>
-          <h2 className="text-xl font-bold text-white font-rpg tracking-wide flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-bold text-white font-rpg tracking-wide flex items-center gap-2">
             <Skull className="w-5 h-5 text-amber-400" />
             Библиотека существ и NPC
           </h2>
@@ -99,7 +99,7 @@ export const TemplatesView: React.FC<Props> = ({
         </div>
         <button
           onClick={handleOpenCreate}
-          className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2"
+          className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Создать существо
@@ -204,7 +204,7 @@ export const TemplatesView: React.FC<Props> = ({
             return (
               <div
                 key={template.id}
-                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl transition group"
+                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-3.5 sm:p-5 flex flex-col justify-between shadow-lg hover:shadow-xl transition group"
               >
                 <div>
                   {/* Card Header */}

@@ -115,13 +115,13 @@ export const TemplateFormModal: React.FC<Props> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white font-rpg tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-white font-rpg tracking-wide">
                 {initialTemplate ? 'Редактировать существо' : 'Новый шаблон существа / NPC'}
               </h2>
               <p className="text-xs text-slate-400">
@@ -139,7 +139,7 @@ export const TemplateFormModal: React.FC<Props> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
           {error && (
             <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-red-300 text-sm flex items-center gap-2">
               <span>⚠️</span> {error}
@@ -192,7 +192,7 @@ export const TemplateFormModal: React.FC<Props> = ({
           </div>
 
           {/* Core Stats: HP, AC, Initiative Mod */}
-          <div className="grid grid-cols-3 gap-3 p-4 bg-slate-950/50 border border-slate-800/80 rounded-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 sm:p-4 bg-slate-950/50 border border-slate-800/80 rounded-2xl">
             {/* HP */}
             <div className="space-y-1.5">
               <label className="flex items-center gap-1 text-xs font-semibold text-rose-400">

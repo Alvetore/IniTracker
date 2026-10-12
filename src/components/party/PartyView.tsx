@@ -47,19 +47,19 @@ export const PartyView: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-slate-900/60 border border-slate-800/80 p-3.5 sm:p-5 rounded-2xl">
         <div>
-          <h2 className="text-xl font-bold text-white font-rpg tracking-wide flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-bold text-white font-rpg tracking-wide flex items-center gap-2">
             <Users className="w-5 h-5 text-amber-400" />
             Партия приключенцев ({party.length})
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Постоянные персонажи игроков. Вы сможете добавить всю партию в любой бой одним кликом!
+            Постоянные персонажи игроков для быстрого добавления в любой бой
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2">
           {party.length > 0 && (
             <button
               onClick={() => {
@@ -68,18 +68,18 @@ export const PartyView: React.FC<Props> = ({
                 }
               }}
               title="Восстановить всем полное HP"
-              className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-semibold rounded-xl text-xs transition flex items-center gap-1.5"
+              className="px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5"
             >
               <Coffee className="w-4 h-4" />
-              Долгий отдых (Хил всех)
+              <span>Хил всех</span>
             </button>
           )}
           <button
             onClick={handleOpenCreate}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5"
+            className={`${party.length > 0 ? '' : 'col-span-2'} px-3.5 py-2 sm:px-4 sm:py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-1.5`}
           >
             <UserPlus className="w-4 h-4" />
-            Добавить персонажа
+            <span>+ Персонаж</span>
           </button>
         </div>
       </div>

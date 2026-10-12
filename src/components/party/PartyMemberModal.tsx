@@ -91,7 +91,7 @@ export const PartyMemberModal: React.FC<Props> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shadow"
@@ -100,7 +100,7 @@ export const PartyMemberModal: React.FC<Props> = ({
               🛡️
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white font-rpg tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-white font-rpg tracking-wide">
                 {initialMember ? 'Редактировать героя' : 'Новый персонаж игрока'}
               </h2>
               <p className="text-xs text-slate-400">
@@ -116,7 +116,7 @@ export const PartyMemberModal: React.FC<Props> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-3.5 sm:space-y-4">
           {error && (
             <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-red-300 text-sm">
               ⚠️ {error}

@@ -21,13 +21,13 @@ export const ThemePickerModal: React.FC<Props> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
               <Palette className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white font-rpg tracking-wide">
+              <h2 className="text-base sm:text-lg font-bold text-white font-rpg tracking-wide">
                 Темы оформления трекера
               </h2>
               <p className="text-xs text-slate-400">
@@ -44,7 +44,7 @@ export const ThemePickerModal: React.FC<Props> = ({
         </div>
 
         {/* Themes List */}
-        <div className="p-6 overflow-y-auto space-y-3">
+        <div className="p-3.5 sm:p-6 overflow-y-auto space-y-2.5 sm:space-y-3">
           {THEMES.map((theme) => {
             const isSelected = currentTheme === theme.id;
 

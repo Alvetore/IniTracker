@@ -36,6 +36,7 @@ import {
   EyeOff,
   Flame,
   Layers,
+  FileText,
 } from 'lucide-react';
 
 interface Props {
@@ -548,11 +549,11 @@ export const CombatTrackerView: React.FC<Props> = ({
   return (
     <div className="space-y-5">
       {/* Top Banner & Mode Bar */}
-      <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900/80 border border-slate-800 p-3.5 sm:p-5 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span
-              className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+              className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${
                 combatState?.isActive
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
                   : 'bg-slate-800 text-slate-400 border border-slate-700'
@@ -561,52 +562,54 @@ export const CombatTrackerView: React.FC<Props> = ({
               {combatState?.isActive ? '⚔️ ИДЁТ БОЙ' : '🛡️ ПОДГОТОВКА К БОЮ'}
             </span>
             {combatState?.encounterTitle && (
-              <span className="text-xs text-slate-400 font-medium">
+              <span className="text-xs text-slate-400 font-medium truncate max-w-[160px] sm:max-w-none">
                 • {combatState.encounterTitle}
               </span>
             )}
           </div>
-          <h2 className="text-xl font-bold text-white font-rpg tracking-wide">
+          <h2 className="text-lg sm:text-xl font-bold text-white font-rpg tracking-wide">
             Трекер Инициативы
           </h2>
         </div>
 
         {/* Quick Top Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-3 sm:flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => setIsPartyModalOpen(true)}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
             title="Выбрать персонажей партии для добавления в бой"
           >
             <Users className="w-3.5 h-3.5 text-blue-400" />
-            + Партия ({party.length})
+            <span>+ Партия</span>
+            <span className="hidden sm:inline">({party.length})</span>
           </button>
 
           <button
             onClick={() => setIsLoadEncounterOpen(true)}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
             title="Загрузить заготовленный энкаунтер"
           >
             <Scroll className="w-3.5 h-3.5 text-amber-400" />
-            + Энкаунтер
+            <span>+ Сцена</span>
           </button>
 
           <button
             onClick={() => setIsAddCombatantOpen(true)}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
             title="Добавить одиночного участника или подкрепление"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-400" />
-            + Участник
+            <span>+ Участник</span>
           </button>
 
           {combatants.length > 0 && (
             <button
               onClick={handleClearCombatants}
               title="Очистить список боя"
-              className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-700 transition"
+              className="col-span-3 sm:col-span-1 p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-700 transition flex items-center justify-center gap-1 text-xs sm:text-base"
             >
               <Trash2 className="w-4 h-4" />
+              <span className="sm:hidden text-xs">Очистить список боя</span>
             </button>
           )}
         </div>
@@ -614,24 +617,24 @@ export const CombatTrackerView: React.FC<Props> = ({
 
       {/* Main Combat Stage */}
       {combatants.length === 0 ? (
-        <div className="text-center py-20 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl p-8 space-y-4">
-          <Flame className="w-14 h-14 text-amber-500/40 mx-auto" />
+        <div className="text-center py-12 sm:py-20 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl p-4 sm:p-8 space-y-4">
+          <Flame className="w-10 h-10 sm:w-14 sm:h-14 text-amber-500/40 mx-auto" />
           <div>
-            <h3 className="text-lg font-bold text-slate-200 font-rpg">Боевой стол пуст</h3>
+            <h3 className="text-base sm:text-lg font-bold text-slate-200 font-rpg">Боевой стол пуст</h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
               Начните бой: добавьте персонажей партии игроков, выберите заготовленный энкаунтер или введите участников вручную!
             </p>
           </div>
-          <div className="flex items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 pt-2 w-full max-w-xs sm:max-w-none mx-auto">
             <button
               onClick={() => setIsPartyModalOpen(true)}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow"
+              className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow"
             >
               <Users className="w-4 h-4" /> Выбрать героев партии ({party.length})
             </button>
             <button
               onClick={() => setIsLoadEncounterOpen(true)}
-              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow"
+              className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow"
             >
               <Scroll className="w-4 h-4" /> Выбрать энкаунтер
             </button>
@@ -639,19 +642,19 @@ export const CombatTrackerView: React.FC<Props> = ({
         </div>
       ) : !combatState?.isActive ? (
         /* PRE-COMBAT / INITIATIVE ROLLING PHASE */
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 sm:p-5 space-y-4 shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3 sm:pb-4">
             <div>
-              <h3 className="text-base font-bold text-white font-rpg">
-                Фаза броска инициативы ({combatants.length} участников)
+              <h3 className="text-sm sm:text-base font-bold text-white font-rpg">
+                Фаза инициативы ({combatants.length} участников)
               </h3>
               <p className="text-xs text-slate-400">
-                Бросьте инициативу за NPC или введите броски игроков, затем нажмите «Начать бой»
+                Бросьте инициативу или введите броски игроков, затем начните бой
               </p>
             </div>
 
             {/* Dice System selection & Auto-roll */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="grid grid-cols-1 sm:flex items-center gap-2">
               <select
                 value={combatState?.diceSystem || 'd20'}
                 onChange={(e) =>
@@ -660,7 +663,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                     diceSystem: e.target.value as DiceSystem,
                   })
                 }
-                className="bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5"
+                className="w-full sm:w-auto bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 sm:py-1.5"
                 title="Кубик инициативы"
               >
                 <option value="d20">Кубик: 1d20 (D&D / PF)</option>
@@ -670,19 +673,21 @@ export const CombatTrackerView: React.FC<Props> = ({
                 <option value="manual">Ручной ввод</option>
               </select>
 
-              <button
-                onClick={handleRollInitiativeNpc}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1"
-              >
-                <Dices className="w-3.5 h-3.5" /> Бросить NPC
-              </button>
+              <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                <button
+                  onClick={handleRollInitiativeNpc}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                >
+                  <Dices className="w-3.5 h-3.5" /> Бросить NPC
+                </button>
 
-              <button
-                onClick={handleRollInitiativeAll}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1"
-              >
-                <Dices className="w-3.5 h-3.5" /> Бросить ВСЕМ
-              </button>
+                <button
+                  onClick={handleRollInitiativeAll}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                >
+                  <Dices className="w-3.5 h-3.5" /> Бросить ВСЕМ
+                </button>
+              </div>
             </div>
           </div>
 
@@ -705,24 +710,23 @@ export const CombatTrackerView: React.FC<Props> = ({
                   />
                   <div className="truncate">
                     <div className="text-sm font-bold text-white truncate">{c.name}</div>
-                    <div className="text-[11px] text-slate-400">
-                      HP: {c.hp.max} | КД: {c.armorClass} | Мод. иниц:{' '}
-                      {c.initiativeModifier >= 0 ? `+${c.initiativeModifier}` : c.initiativeModifier}
+                    <div className="text-[11px] text-slate-400 truncate">
+                      HP: {c.hp.max} | КД: {c.armorClass} | Мод: {c.initiativeModifier >= 0 ? `+${c.initiativeModifier}` : c.initiativeModifier}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <div className="flex items-center gap-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1">
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-xs text-slate-400 font-semibold">Иниц:</span>
+                    <span className="text-xs text-slate-400 font-semibold hidden sm:inline">Иниц:</span>
                     <input
                       type="number"
                       value={c.initiative}
                       onChange={(e) =>
                         handleUpdateCombatant(c.id, { initiative: parseInt(e.target.value) || 0 })
                       }
-                      className="w-12 bg-transparent text-center font-bold text-white text-sm focus:outline-none focus:text-amber-400"
+                      className="w-10 sm:w-12 bg-transparent text-center font-bold text-white text-sm focus:outline-none focus:text-amber-400"
                     />
                   </div>
 
@@ -742,7 +746,7 @@ export const CombatTrackerView: React.FC<Props> = ({
           <div className="pt-3 border-t border-slate-800 flex items-center justify-end">
             <button
               onClick={handleStartCombat}
-              className="py-3 px-8 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-base shadow-lg shadow-amber-500/25 transition flex items-center gap-2 transform hover:scale-[1.02]"
+              className="w-full sm:w-auto py-3 px-6 sm:px-8 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-2 transform active:scale-95"
             >
               <Play className="w-5 h-5 fill-current" />
               НАЧАТЬ БОЙ (РАУНД 1)
@@ -753,81 +757,82 @@ export const CombatTrackerView: React.FC<Props> = ({
         /* ACTIVE COMBAT PHASE */
         <div className="space-y-4">
           {/* Active Combat Dashboard Controls */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
             {/* Round & Nav */}
-            <div className="flex items-center gap-3">
-              <div className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-rpg font-extrabold text-lg shadow-md flex items-center gap-2">
-                <span>РАУНД</span>
-                <span className="text-2xl">{combatState.round}</span>
+            <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-start">
+              <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-500 text-slate-950 rounded-xl font-rpg font-extrabold text-sm sm:text-lg shadow-md flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <span className="text-xs sm:text-sm">РАУНД</span>
+                <span className="text-lg sm:text-2xl">{combatState.round}</span>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-1 sm:flex-initial justify-end sm:justify-start">
                 <button
                   onClick={handlePrevTurn}
                   title="Предыдущий ход"
-                  className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition"
+                  className="p-2 sm:p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition shrink-0"
                 >
                   <SkipBack className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleNextTurn}
                   title="Следующий ход (клавиша Пробел)"
-                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm transition flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                  className="flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-emerald-500/20"
                 >
-                  <SkipForward className="w-4 h-4" />
-                  Следующий ход <span className="text-[10px] bg-slate-950/20 px-1.5 py-0.5 rounded font-mono">Space</span>
+                  <SkipForward className="w-4 h-4 shrink-0" />
+                  <span>След. ход</span>
+                  <span className="hidden sm:inline-block text-[10px] bg-slate-950/20 px-1.5 py-0.5 rounded font-mono">Space</span>
                 </button>
               </div>
             </div>
 
             {/* Who's active & On Deck */}
             {currentActive && (
-              <div className="px-4 py-2 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-3 text-xs">
-                <div>
-                  <span className="text-amber-400 font-bold block">СЕЙЧАС ХОДИТ:</span>
-                  <span className="text-white font-bold text-sm">{currentActive.name}</span>
+              <div className="px-3 sm:px-4 py-2 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between sm:justify-start gap-3 text-xs w-full md:w-auto">
+                <div className="truncate">
+                  <span className="text-amber-400 font-bold block text-[10px]">СЕЙЧАС ХОДИТ:</span>
+                  <span className="text-white font-bold text-xs sm:text-sm truncate block">{currentActive.name}</span>
                 </div>
                 {nextOnDeck && (
-                  <div className="border-l border-slate-800 pl-3">
-                    <span className="text-slate-500 font-semibold block">СЛЕДУЮЩИЙ:</span>
-                    <span className="text-slate-300 font-medium">{nextOnDeck.name}</span>
+                  <div className="border-l border-slate-800 pl-3 truncate text-right sm:text-left">
+                    <span className="text-slate-500 font-semibold block text-[10px]">СЛЕДУЮЩИЙ:</span>
+                    <span className="text-slate-300 font-medium truncate block">{nextOnDeck.name}</span>
                   </div>
                 )}
               </div>
             )}
 
             {/* Additional Combat Bar Tools */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between md:justify-end gap-2 w-full md:w-auto pt-1 md:pt-0 border-t md:border-t-0 border-slate-800">
               <button
                 onClick={() => setShowDefeated(!showDefeated)}
-                className={`p-2 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 ${
+                className={`flex-1 md:flex-initial py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
                   showDefeated
                     ? 'border-slate-700 bg-slate-800 text-slate-300'
                     : 'border-slate-800 bg-slate-950 text-slate-500'
                 }`}
                 title={showDefeated ? 'Скрыть поверженных' : 'Показать поверженных'}
               >
-                {showDefeated ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                <span className="hidden sm:inline">Поверженные</span>
+                {showDefeated ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span>Поверженные</span>
               </button>
 
               <button
                 onClick={() => setShowLog(!showLog)}
-                className={`p-2 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 ${
+                className={`py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
                   showLog
                     ? 'border-amber-500/50 bg-amber-500/20 text-amber-300'
                     : 'border-slate-700 bg-slate-800 text-slate-300'
                 }`}
                 title="Лог боя"
               >
-                <Scroll className="w-4 h-4" />
-                <span className="hidden sm:inline">Лог</span>
+                <Scroll className="w-3.5 h-3.5" />
+                <span>Лог</span>
               </button>
 
               <button
                 onClick={handleResetCombat}
                 title="Сбросить бой к фазе подготовки"
-                className="p-2 text-slate-400 hover:text-amber-400 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition"
+                className="p-1.5 sm:p-2 text-slate-400 hover:text-amber-400 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -871,11 +876,11 @@ export const CombatTrackerView: React.FC<Props> = ({
                     </div>
                   )}
 
-                  <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     {/* Left: Initiative, Name, AC, Badges */}
-                    <div className="flex items-center gap-3.5 min-w-[220px]">
+                    <div className="flex items-center gap-2.5 sm:gap-3.5">
                       {/* Initiative Badge with Up/Down buttons */}
-                      <div className="flex flex-col items-center">
+                      <div className="flex flex-col items-center shrink-0">
                         <button
                           onClick={() => handleMoveOrder(index, 'up')}
                           disabled={index === 0}
@@ -885,7 +890,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                           <ChevronUp className="w-3.5 h-3.5" />
                         </button>
                         <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shadow ${
+                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm shadow ${
                             isActive
                               ? 'bg-amber-500 text-slate-950 font-black'
                               : 'bg-slate-950 border border-slate-800 text-slate-200'
@@ -904,12 +909,12 @@ export const CombatTrackerView: React.FC<Props> = ({
                       </div>
 
                       {/* Name & Indicators */}
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <h4
-                            className={`text-base font-bold transition ${
+                            className={`text-sm sm:text-base font-bold transition truncate ${
                               isActive
-                                ? 'text-amber-300 font-rpg text-lg'
+                                ? 'text-amber-300 font-rpg text-base sm:text-lg'
                                 : combatant.isDefeated
                                 ? 'text-slate-500 line-through'
                                 : 'text-white'
@@ -918,25 +923,25 @@ export const CombatTrackerView: React.FC<Props> = ({
                             {combatant.name}
                           </h4>
                           {isNext && (
-                            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-semibold">
+                            <span className="text-[9px] sm:text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded font-semibold">
                               След.
                             </span>
                           )}
                           {combatant.isDelayed && (
-                            <span className="text-[10px] bg-purple-950 border border-purple-800 text-purple-300 px-1.5 py-0.5 rounded font-semibold">
+                            <span className="text-[9px] sm:text-[10px] bg-purple-950 border border-purple-800 text-purple-300 px-1.5 py-0.2 rounded font-semibold">
                               Задержан
                             </span>
                           )}
                           {combatant.isDefeated && (
-                            <span className="text-[10px] bg-red-950 border border-red-800 text-red-400 px-1.5 py-0.5 rounded font-semibold">
+                            <span className="text-[9px] sm:text-[10px] bg-red-950 border border-red-800 text-red-400 px-1.5 py-0.2 rounded font-semibold">
                               Повержен
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
                           <span
-                            className={`px-1.5 py-0.2 rounded text-[10px] font-bold uppercase border ${
+                            className={`px-1.5 py-0.2 rounded text-[9px] sm:text-[10px] font-bold uppercase border ${
                               combatant.type === 'player'
                                 ? 'border-blue-800/80 bg-blue-950/60 text-blue-300'
                                 : combatant.type === 'enemy'
@@ -951,7 +956,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                               : 'Союзник'}
                           </span>
 
-                          <span className="flex items-center gap-1 font-semibold text-slate-300">
+                          <span className="flex items-center gap-1 font-semibold text-slate-300 text-xs">
                             <Shield className="w-3 h-3 text-blue-400" /> КД {combatant.armorClass}
                           </span>
                         </div>
@@ -959,14 +964,14 @@ export const CombatTrackerView: React.FC<Props> = ({
                     </div>
 
                     {/* Middle: Health (HP) bar & Quick Modifiers */}
-                    <div className="flex-1 max-w-sm">
+                    <div className="w-full md:flex-1 md:max-w-sm">
                       <div className="flex items-center justify-between text-xs mb-1 font-semibold">
                         <span className="flex items-center gap-1 text-slate-400">
                           <Heart className="w-3.5 h-3.5 text-rose-400" /> HP:
                         </span>
                         <button
                           onClick={() => setHpModalCombatant(combatant)}
-                          className="font-bold text-sm text-white hover:text-amber-400 transition"
+                          className="font-bold text-xs sm:text-sm text-white hover:text-amber-400 transition"
                           title="Изменить здоровье"
                         >
                           {combatant.hp.current} / {combatant.hp.max}
@@ -979,7 +984,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                       {/* Visual Bar */}
                       <div
                         onClick={() => setHpModalCombatant(combatant)}
-                        className="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800 cursor-pointer"
+                        className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800 cursor-pointer"
                         title="Кликните для ввода урона или лечения"
                       >
                         <div
@@ -989,42 +994,42 @@ export const CombatTrackerView: React.FC<Props> = ({
                       </div>
 
                       {/* Quick inline buttons */}
-                      <div className="flex items-center gap-1 mt-1.5">
+                      <div className="grid grid-cols-4 sm:flex items-center gap-1.5 mt-2">
                         <button
                           onClick={() => handleApplyHpChange(combatant.id, Math.max(0, combatant.hp.current - 5), combatant.hp.temp, `${combatant.name} -5 HP`)}
-                          className="px-2 py-0.5 bg-slate-950 hover:bg-red-950 border border-slate-800 text-red-400 rounded text-[11px] font-bold"
+                          className="py-1 px-2 bg-slate-950 hover:bg-red-950 border border-slate-800 text-red-400 rounded-lg text-xs font-bold text-center active:scale-95 transition"
                         >
                           -5
                         </button>
                         <button
                           onClick={() => handleApplyHpChange(combatant.id, Math.max(0, combatant.hp.current - 1), combatant.hp.temp, `${combatant.name} -1 HP`)}
-                          className="px-2 py-0.5 bg-slate-950 hover:bg-red-950 border border-slate-800 text-red-400 rounded text-[11px] font-bold"
+                          className="py-1 px-2 bg-slate-950 hover:bg-red-950 border border-slate-800 text-red-400 rounded-lg text-xs font-bold text-center active:scale-95 transition"
                         >
                           -1
                         </button>
                         <button
                           onClick={() => handleApplyHpChange(combatant.id, Math.min(combatant.hp.max, combatant.hp.current + 5), combatant.hp.temp, `${combatant.name} +5 HP`)}
-                          className="px-2 py-0.5 bg-slate-950 hover:bg-emerald-950 border border-slate-800 text-emerald-400 rounded text-[11px] font-bold"
+                          className="py-1 px-2 bg-slate-950 hover:bg-emerald-950 border border-slate-800 text-emerald-400 rounded-lg text-xs font-bold text-center active:scale-95 transition"
                         >
                           +5
                         </button>
                         <button
                           onClick={() => setHpModalCombatant(combatant)}
-                          className="ml-auto px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-semibold"
+                          className="py-1 px-2 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-xs font-semibold text-center whitespace-nowrap active:scale-95 transition"
                         >
-                          Урон / Хил
+                          Урон/Хил
                         </button>
                       </div>
                     </div>
 
                     {/* Right: Conditions, Toggles, Actions */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                    <div className="flex items-center justify-between md:justify-end gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800/80">
                       {/* Active Condition badges */}
-                      <div className="flex flex-wrap gap-1 max-w-xs">
+                      <div className="flex flex-wrap gap-1 items-center flex-1 md:flex-initial">
                         {combatant.conditions.map((cond) => (
                           <span
                             key={cond.id}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs border font-medium"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] border font-medium"
                             style={{
                               borderColor: `${cond.color}60`,
                               backgroundColor: `${cond.color}20`,
@@ -1033,7 +1038,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                           >
                             <span>{cond.name}</span>
                             {cond.roundsRemaining !== null && (
-                              <span className="font-bold text-[10px] bg-black/40 px-1 rounded">
+                              <span className="font-bold text-[9px] bg-black/40 px-1 rounded">
                                 {cond.roundsRemaining}р
                               </span>
                             )}
@@ -1049,22 +1054,23 @@ export const CombatTrackerView: React.FC<Props> = ({
 
                         <button
                           onClick={() => setConditionModalCombatant(combatant)}
-                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1 transition"
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-1 transition"
                         >
-                          <Plus className="w-3 h-3 text-amber-400" /> Статус
+                          <Plus className="w-3 h-3 text-amber-400" />
+                          <span>Статус</span>
                         </button>
                       </div>
 
                       {/* Defeated & Delayed toggles */}
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() =>
                             handleUpdateCombatant(combatant.id, { isDelayed: !combatant.isDelayed })
                           }
-                          className={`p-1.5 rounded-lg text-xs transition ${
+                          className={`p-2 rounded-lg text-xs transition ${
                             combatant.isDelayed
                               ? 'bg-purple-950 text-purple-300 border border-purple-800'
-                              : 'text-slate-500 hover:text-slate-300'
+                              : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
                           }`}
                           title="Задержать ход"
                         >
@@ -1075,10 +1081,10 @@ export const CombatTrackerView: React.FC<Props> = ({
                           onClick={() =>
                             handleUpdateCombatant(combatant.id, { isDefeated: !combatant.isDefeated })
                           }
-                          className={`p-1.5 rounded-lg text-xs transition ${
+                          className={`p-2 rounded-lg text-xs transition ${
                             combatant.isDefeated
                               ? 'bg-red-950 text-red-400 border border-red-800'
-                              : 'text-slate-500 hover:text-slate-300'
+                              : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
                           }`}
                           title={combatant.isDefeated ? 'Воскресить / В сознании' : 'Отметить как повержен'}
                         >
@@ -1092,20 +1098,20 @@ export const CombatTrackerView: React.FC<Props> = ({
                                 expandedNotesId === combatant.id ? null : combatant.id
                               )
                             }
-                            className={`p-1.5 rounded-lg text-xs transition ${
+                            className={`p-2 rounded-lg text-xs transition ${
                               expandedNotesId === combatant.id
                                 ? 'bg-amber-500/20 text-amber-300'
-                                : 'text-slate-500 hover:text-slate-300'
+                                : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
                             }`}
-                            title="Показать способности и заметки"
+                            title="Заметки"
                           >
-                            <Scroll className="w-4 h-4" />
+                            <FileText className="w-4 h-4" />
                           </button>
                         )}
 
                         <button
                           onClick={() => handleRemoveCombatant(combatant.id)}
-                          className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg transition"
+                          className="p-2 text-slate-500 hover:text-red-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
                           title="Удалить из боя"
                         >
                           <Trash2 className="w-4 h-4" />

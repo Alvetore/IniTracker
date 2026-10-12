@@ -41,13 +41,15 @@ export const Header: React.FC<Props> = ({
     {
       id: 'combat' as ActiveTab,
       label: 'Бой',
+      shortLabel: 'Бой',
       icon: Swords,
-      badge: isCombatActive ? 'АКТИВЕН' : undefined,
+      badge: isCombatActive ? 'АКТИВ' : undefined,
       badgeColor: 'bg-red-500/20 text-red-300 border-red-500/40',
     },
     {
       id: 'encounters' as ActiveTab,
       label: 'Энкаунтеры',
+      shortLabel: 'Сцены',
       icon: Scroll,
       badge: String(encounterCount),
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
@@ -55,6 +57,7 @@ export const Header: React.FC<Props> = ({
     {
       id: 'templates' as ActiveTab,
       label: 'Бестиарий',
+      shortLabel: 'Монстры',
       icon: Skull,
       badge: String(templateCount),
       badgeColor: 'bg-slate-800 text-slate-300 border-slate-700',
@@ -62,6 +65,7 @@ export const Header: React.FC<Props> = ({
     {
       id: 'party' as ActiveTab,
       label: 'Партия',
+      shortLabel: 'Партия',
       icon: Users,
       badge: String(partyCount),
       badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
@@ -69,17 +73,18 @@ export const Header: React.FC<Props> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800/80">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        {/* Main Header Bar */}
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
-              <Swords className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20 shrink-0">
+              <Swords className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-extrabold text-white font-rpg tracking-wide flex items-center gap-2">
-                Initiative Tracker
+            <div className="truncate">
+              <h1 className="text-sm sm:text-lg font-extrabold text-white font-rpg tracking-wide flex items-center gap-1.5 truncate">
+                <span>IniTracker</span>
                 <span className="text-[10px] font-sans font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 px-1.5 py-0.2 rounded hidden sm:inline-block">
                   TTRPG
                 </span>
@@ -90,8 +95,8 @@ export const Header: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="flex items-center gap-1 sm:gap-1.5">
+          {/* Desktop Navigation Tabs (Hidden on small mobile) */}
+          <nav className="hidden sm:flex items-center gap-1 sm:gap-1.5">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -125,7 +130,7 @@ export const Header: React.FC<Props> = ({
           </nav>
 
           {/* Fast Utility Actions: Theme, Dice & Data */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={onOpenThemeModal}
               className="p-2 sm:px-3 sm:py-2 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-slate-800 hover:border-purple-500/50 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow"
@@ -154,6 +159,42 @@ export const Header: React.FC<Props> = ({
             </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Tabs Bar (Visible on mobile screens < sm) */}
+        <nav className="sm:hidden grid grid-cols-4 gap-1 pb-2 pt-0.5 border-t border-slate-900">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className={`py-1.5 px-1 rounded-xl text-[11px] font-bold transition flex flex-col items-center justify-center gap-0.5 relative ${
+                  isActive
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                    : 'text-slate-400 hover:text-slate-200 bg-slate-900/70 border border-slate-800/80'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <Icon className="w-3.5 h-3.5" />
+                  {tab.badge && (
+                    <span
+                      className={`text-[9px] font-mono px-1 py-0 rounded-full border leading-tight ${
+                        isActive
+                          ? 'bg-slate-950 text-amber-300 border-slate-800'
+                          : tab.badgeColor
+                      }`}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </div>
+                <span className="truncate max-w-full tracking-tight">{tab.shortLabel}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
     </header>
   );
