@@ -71,17 +71,10 @@ npm run build
 
 В репозитории уже настроен GitHub Actions workflow (`.github/workflows/deploy.yml`).
 
-1. Создайте репозиторий на GitHub и отправьте в него код:
-   ```bash
-   git init -b main
-   git add .
-   git commit -m "Initial commit: TTRPG Initiative Tracker"
-   git remote add origin https://github.com/ВАШ_ЛОГИН/InitiativeTracker.git
-   git push -u origin main
-   ```
-2. Откройте репозиторий на GitHub и перейдите в:
-   **Settings** ➔ **Pages** (в боковом меню).
+1. Откройте репозиторий на GitHub: [github.com/Alvetore/IniTracker](https://github.com/Alvetore/IniTracker)
+2. Перейдите в **Settings** ➔ **Pages** (в боковом меню).
 3. В разделе **Build and deployment**:
    * В выпадающем списке **Source** выберите **GitHub Actions**.
-4. После пуша workflow автоматически соберёт проект и опубликует его по адресу:
-   `https://ВАШ_ЛОГИН.github.io/InitiativeTracker/`
+4. После сохранения workflow соберёт и опубликует сайт по адресу:
+   **[https://alvetore.github.io/IniTracker/](https://alvetore.github.io/IniTracker/)**
+
