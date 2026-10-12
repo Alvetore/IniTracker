@@ -287,7 +287,10 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div
+      data-theme={currentTheme}
+      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-300"
+    >
       {/* Sticky Header */}
       <Header
         activeTab={activeTab}
