@@ -15,6 +15,8 @@ import { EncountersView } from './components/encounters/EncountersView';
 import { CombatTrackerView } from './components/combat/CombatTrackerView';
 import { DiceRollerModal } from './components/common/DiceRollerModal';
 import { DataManagementModal } from './components/common/DataManagementModal';
+import { ThemePickerModal } from './components/common/ThemePickerModal';
+import { THEMES, ThemeId } from './types/theme';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('combat');
@@ -23,9 +25,26 @@ export const App: React.FC = () => {
   const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [combatState, setCombatState] = useState<ActiveCombatState | null>(null);
 
+  // Theme state
+  const [currentTheme, setCurrentTheme] = useState<ThemeId>(() => {
+    return (localStorage.getItem('ttrpg_theme_v1') as ThemeId) || 'fantasy';
+  });
+  const [isThemeOpen, setIsThemeOpen] = useState(false);
+
   // Global modals
   const [isDiceOpen, setIsDiceOpen] = useState(false);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    if (currentTheme === 'parchment') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+    localStorage.setItem('ttrpg_theme_v1', currentTheme);
+  }, [currentTheme]);
 
   // Load initial data
   const loadAllData = () => {
@@ -279,6 +298,8 @@ export const App: React.FC = () => {
         partyCount={party.length}
         onOpenDiceRoller={() => setIsDiceOpen(true)}
         onOpenDataModal={() => setIsDataModalOpen(true)}
+        onOpenThemeModal={() => setIsThemeOpen(true)}
+        currentThemeBadge={THEMES.find((t) => t.id === currentTheme)?.badge}
       />
 
       {/* Main Content Area */}
@@ -333,6 +354,13 @@ export const App: React.FC = () => {
       </footer>
 
       {/* Global Modals */}
+      <ThemePickerModal
+        isOpen={isThemeOpen}
+        onClose={() => setIsThemeOpen(false)}
+        currentTheme={currentTheme}
+        onSelectTheme={setCurrentTheme}
+      />
+
       <DiceRollerModal
         isOpen={isDiceOpen}
         onClose={() => setIsDiceOpen(false)}

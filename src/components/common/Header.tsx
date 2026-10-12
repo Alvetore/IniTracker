@@ -7,6 +7,7 @@ import {
   Dices,
   Save,
   Flame,
+  Palette,
 } from 'lucide-react';
 
 export type ActiveTab = 'combat' | 'encounters' | 'templates' | 'party';
@@ -20,6 +21,8 @@ interface Props {
   partyCount: number;
   onOpenDiceRoller: () => void;
   onOpenDataModal: () => void;
+  onOpenThemeModal: () => void;
+  currentThemeBadge?: string;
 }
 
 export const Header: React.FC<Props> = ({
@@ -31,6 +34,8 @@ export const Header: React.FC<Props> = ({
   partyCount,
   onOpenDiceRoller,
   onOpenDataModal,
+  onOpenThemeModal,
+  currentThemeBadge,
 }) => {
   const tabs = [
     {
@@ -119,8 +124,17 @@ export const Header: React.FC<Props> = ({
             })}
           </nav>
 
-          {/* Fast Utility Actions: Dice & Data */}
+          {/* Fast Utility Actions: Theme, Dice & Data */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={onOpenThemeModal}
+              className="p-2 sm:px-3 sm:py-2 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-slate-800 hover:border-purple-500/50 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow"
+              title="Выбрать визуальную тему оформления"
+            >
+              <Palette className="w-4 h-4 text-purple-400" />
+              <span className="hidden md:inline">{currentThemeBadge || 'Тема'}</span>
+            </button>
+
             <button
               onClick={onOpenDiceRoller}
               className="p-2 sm:px-3 sm:py-2 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow"

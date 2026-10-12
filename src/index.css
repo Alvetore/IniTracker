@@ -1,31 +1,123 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
-    --font-cinzel: 'Cinzel', serif;
-    --font-inter: 'Inter', sans-serif;
+  /* 1. Классическое Фэнтези / Золото Дракона (Default) */
+  :root,
+  [data-theme="fantasy"] {
+    --theme-bg-body: #020617;
+    --theme-bg-surface: rgba(15, 23, 42, 0.75);
+    --theme-bg-card: rgba(15, 23, 42, 0.85);
+    --theme-bg-inset: rgba(2, 6, 23, 0.65);
+    --theme-border: rgba(51, 65, 85, 0.65);
+    --theme-border-hover: rgba(100, 116, 139, 0.8);
+    --theme-accent: #f59e0b;
+    --theme-accent-hover: #fbbf24;
+    --theme-accent-contrast: #020617;
+    --theme-accent-subtle: rgba(245, 158, 11, 0.15);
+    --theme-text-main: #f8fafc;
+    --theme-text-muted: #94a3b8;
+    --theme-font-rpg: 'Cinzel', serif;
+    color-scheme: dark;
+  }
+
+  /* 2. Кровь и Пепел / Тёмное Фэнтези (Grimdark) */
+  [data-theme="grimdark"] {
+    --theme-bg-body: #0a0507;
+    --theme-bg-surface: rgba(26, 13, 17, 0.85);
+    --theme-bg-card: rgba(36, 17, 23, 0.85);
+    --theme-bg-inset: rgba(13, 5, 8, 0.8);
+    --theme-border: rgba(136, 19, 55, 0.5);
+    --theme-border-hover: rgba(225, 29, 72, 0.7);
+    --theme-accent: #e11d48;
+    --theme-accent-hover: #f43f5e;
+    --theme-accent-contrast: #ffffff;
+    --theme-accent-subtle: rgba(225, 29, 72, 0.18);
+    --theme-text-main: #fecdd3;
+    --theme-text-muted: #fda4af;
+    --theme-font-rpg: 'Cinzel', serif;
+    color-scheme: dark;
+  }
+
+  /* 3. Кибер-Неон / Sci-Fi */
+  [data-theme="cyberpunk"] {
+    --theme-bg-body: #030712;
+    --theme-bg-surface: rgba(15, 23, 42, 0.85);
+    --theme-bg-card: rgba(11, 27, 49, 0.85);
+    --theme-bg-inset: rgba(3, 7, 18, 0.8);
+    --theme-border: rgba(14, 116, 144, 0.5);
+    --theme-border-hover: rgba(6, 182, 212, 0.8);
+    --theme-accent: #06b6d4;
+    --theme-accent-hover: #22d3ee;
+    --theme-accent-contrast: #030712;
+    --theme-accent-subtle: rgba(6, 182, 212, 0.18);
+    --theme-text-main: #e0f2fe;
+    --theme-text-muted: #7dd3fc;
+    --theme-font-rpg: 'Rajdhani', sans-serif;
+    color-scheme: dark;
+  }
+
+  /* 4. Зов Ктулху / Лавкрафтовский Ужас */
+  [data-theme="eldritch"] {
+    --theme-bg-body: #030a06;
+    --theme-bg-surface: rgba(6, 30, 20, 0.85);
+    --theme-bg-card: rgba(6, 44, 28, 0.8);
+    --theme-bg-inset: rgba(3, 14, 8, 0.85);
+    --theme-border: rgba(5, 150, 105, 0.45);
+    --theme-border-hover: rgba(16, 185, 129, 0.7);
+    --theme-accent: #10b981;
+    --theme-accent-hover: #34d399;
+    --theme-accent-contrast: #022c22;
+    --theme-accent-subtle: rgba(16, 185, 129, 0.18);
+    --theme-text-main: #d1fae5;
+    --theme-text-muted: #6ee7b7;
+    --theme-font-rpg: 'Crimson Pro', serif;
+    color-scheme: dark;
+  }
+
+  /* 5. Старинный Пергамент / Светлая тема */
+  [data-theme="parchment"] {
+    --theme-bg-body: #f5efe6;
+    --theme-bg-surface: rgba(254, 252, 247, 0.95);
+    --theme-bg-card: #faf6ef;
+    --theme-bg-inset: #ede4d5;
+    --theme-border: rgba(180, 155, 125, 0.55);
+    --theme-border-hover: rgba(180, 83, 9, 0.6);
+    --theme-accent: #b45309;
+    --theme-accent-hover: #92400e;
+    --theme-accent-contrast: #ffffff;
+    --theme-accent-subtle: rgba(180, 83, 9, 0.12);
+    --theme-text-main: #1c1917;
+    --theme-text-muted: #57534e;
+    --theme-font-rpg: 'Crimson Pro', serif;
+    color-scheme: light;
   }
 }
 
-.font-rpg {
-  font-family: var(--font-cinzel);
+body {
+  background-color: var(--theme-bg-body);
+  color: var(--theme-text-main);
+  font-family: 'Inter', sans-serif;
 }
 
-/* Custom scrollbars for tabletop master view */
+.font-rpg {
+  font-family: var(--theme-font-rpg);
+}
+
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--theme-bg-inset);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.6);
+  background: var(--theme-border);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.8);
+  background: var(--theme-accent);
 }
