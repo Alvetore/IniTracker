@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Combatant, CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
 import { X, UserPlus, Sparkles, Plus } from 'lucide-react';
@@ -19,10 +19,17 @@ export const AddCombatantModal: React.FC<Props> = ({
   onAddCombatants,
 }) => {
   const [mode, setMode] = useState<'template' | 'custom'>('template');
-  const [selectedTemplateId, setSelectedTemplateId] = useState(
-    templates.length > 0 ? templates[0].id : ''
-  );
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [count, setCount] = useState<number>(1);
+
+  // Sync selectedTemplateId whenever modal opens or templates change
+  useEffect(() => {
+    if (templates.length > 0) {
+      if (!selectedTemplateId || !templates.some((t) => t.id === selectedTemplateId)) {
+        setSelectedTemplateId(templates[0].id);
+      }
+    }
+  }, [isOpen, templates]);
 
   // Custom fields
   const [customName, setCustomName] = useState('');
@@ -39,7 +46,8 @@ export const AddCombatantModal: React.FC<Props> = ({
     const newCombatants: Combatant[] = [];
 
     if (mode === 'template') {
-      const tpl = templates.find((t) => t.id === selectedTemplateId);
+      const targetId = selectedTemplateId || (templates.length > 0 ? templates[0].id : '');
+      const tpl = templates.find((t) => t.id === targetId) || templates[0];
       if (!tpl) return;
 
       for (let i = 1; i <= count; i++) {

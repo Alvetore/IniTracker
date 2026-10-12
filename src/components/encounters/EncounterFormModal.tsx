@@ -66,7 +66,8 @@ export const EncounterFormModal: React.FC<Props> = ({
 
   // Add monster from template
   const handleAddFromTemplate = () => {
-    const tpl = templates.find((t) => t.id === selectedTemplateId);
+    const targetId = selectedTemplateId || (templates.length > 0 ? templates[0].id : '');
+    const tpl = templates.find((t) => t.id === targetId) || templates[0];
     if (!tpl) return;
 
     // Check if monster with same template already exists in encounter

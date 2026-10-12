@@ -38,10 +38,13 @@ export const App: React.FC = () => {
   // Apply theme to document
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
+    document.body.setAttribute('data-theme', currentTheme);
     if (currentTheme === 'parchment') {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
     } else {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
     }
     localStorage.setItem('ttrpg_theme_v1', currentTheme);
   }, [currentTheme]);

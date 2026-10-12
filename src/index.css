@@ -1,126 +1,233 @@
 @import "tailwindcss";
 
-/* 1. Классическое Фэнтези / Золото Дракона (Default) */
-:root,
-[data-theme="fantasy"] {
-  --color-slate-950: #020617;
-  --color-slate-900: #0f172a;
-  --color-slate-850: #172033;
-  --color-slate-800: #1e293b;
-  --color-slate-750: #283548;
-  --color-slate-700: #334155;
-  --color-slate-600: #475569;
-  --color-slate-500: #64748b;
-  --color-slate-400: #94a3b8;
-  --color-slate-300: #cbd5e1;
-  --color-slate-200: #e2e8f0;
-  --color-slate-100: #f1f5f9;
-  --color-amber-500: #f59e0b;
-  --color-amber-400: #fbbf24;
-  --color-amber-300: #fcd34d;
-  --color-amber-200: #fde68a;
-  --theme-font-rpg: 'Cinzel', serif;
-  color-scheme: dark;
-}
-
-/* 2. Кровь и Пепел / Тёмное Фэнтези / Гримдарк */
-[data-theme="grimdark"] {
-  --color-slate-950: #0d0608;
-  --color-slate-900: #1c0c12;
-  --color-slate-850: #29101a;
-  --color-slate-800: #381524;
-  --color-slate-750: #4a1c30;
-  --color-slate-700: #5c223c;
-  --color-slate-600: #7d2e51;
-  --color-slate-500: #a33b6a;
-  --color-slate-400: #fb7185;
-  --color-slate-300: #fda4af;
-  --color-slate-200: #fecdd3;
-  --color-slate-100: #fff1f2;
-  --color-amber-500: #e11d48;
-  --color-amber-400: #f43f5e;
-  --color-amber-300: #fb7185;
-  --color-amber-200: #fda4af;
-  --theme-font-rpg: 'Cinzel', serif;
-  color-scheme: dark;
-}
-
-/* 3. Кибер-Неон / Sci-Fi */
-[data-theme="cyberpunk"] {
-  --color-slate-950: #020512;
-  --color-slate-900: #07122b;
-  --color-slate-850: #0b1a3d;
-  --color-slate-800: #102552;
-  --color-slate-750: #152f66;
-  --color-slate-700: #1c3d82;
-  --color-slate-600: #0284c7;
-  --color-slate-500: #0ea5e9;
-  --color-slate-400: #38bdf8;
-  --color-slate-300: #7dd3fc;
-  --color-slate-200: #bae6fd;
-  --color-slate-100: #f0f9ff;
-  --color-amber-500: #06b6d4;
-  --color-amber-400: #22d3ee;
-  --color-amber-300: #67e8f9;
-  --color-amber-200: #a5f3fc;
-  --theme-font-rpg: 'Rajdhani', sans-serif;
-  color-scheme: dark;
-}
-
-/* 4. Зов Ктулху / Лавкрафтовский Ужас */
-[data-theme="eldritch"] {
-  --color-slate-950: #020a06;
-  --color-slate-900: #06180e;
-  --color-slate-850: #0a2516;
-  --color-slate-800: #10341f;
-  --color-slate-750: #154429;
-  --color-slate-700: #1b5835;
-  --color-slate-600: #059669;
-  --color-slate-500: #10b981;
-  --color-slate-400: #34d399;
-  --color-slate-300: #6ee7b7;
-  --color-slate-200: #a7f3d0;
-  --color-slate-100: #ecfdf5;
-  --color-amber-500: #10b981;
-  --color-amber-400: #34d399;
-  --color-amber-300: #6ee7b7;
-  --color-amber-200: #a7f3d0;
-  --theme-font-rpg: 'Crimson Pro', serif;
-  color-scheme: dark;
-}
-
-/* 5. Старинный Пергамент / Светлая тема */
-[data-theme="parchment"] {
-  --color-slate-950: #f4ecdf;
-  --color-slate-900: #fffdf8;
-  --color-slate-850: #eee2ce;
-  --color-slate-800: #e2d2ba;
-  --color-slate-750: #d6be9d;
-  --color-slate-700: #c4a780;
-  --color-slate-600: #8c714d;
-  --color-slate-500: #6b5335;
-  --color-slate-400: #4a371f;
-  --color-slate-300: #2e2111;
-  --color-slate-200: #1f160a;
-  --color-slate-100: #120c05;
-  --color-white: #120c05;
-  --color-amber-500: #b45309;
-  --color-amber-400: #92400e;
-  --color-amber-300: #78350f;
-  --color-amber-200: #451a03;
-  --theme-font-rpg: 'Crimson Pro', serif;
-  color-scheme: light;
-}
-
+/* Base Body Styles */
 body {
-  background-color: var(--color-slate-950);
-  color: var(--color-slate-100);
   font-family: 'Inter', sans-serif;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 .font-rpg {
-  font-family: var(--theme-font-rpg);
+  font-family: var(--theme-font, 'Cinzel', serif);
+}
+
+/* ============================================================
+   1. КЛАССИЧЕСКОЕ ФЭНТЕЗИ / ЗОЛОТО ДРАКОНА (Default / Fantasy)
+   ============================================================ */
+[data-theme="fantasy"] {
+  --theme-accent: #f59e0b;
+  --theme-font: 'Cinzel', serif;
+}
+
+/* ============================================================
+   2. КРОВЬ И ПЕПЕЛ / ТЁМНОЕ ФЭНТЕЗИ (Grimdark)
+   ============================================================ */
+[data-theme="grimdark"] {
+  --theme-accent: #e11d48;
+  --theme-font: 'Cinzel', serif;
+  background-color: #090305 !important;
+  color: #ffe4e6 !important;
+}
+[data-theme="grimdark"] [class*="bg-slate-950"] {
+  background-color: #090305 !important;
+}
+[data-theme="grimdark"] [class*="bg-slate-900"] {
+  background-color: #17070d !important;
+}
+[data-theme="grimdark"] [class*="bg-slate-850"],
+[data-theme="grimdark"] [class*="bg-slate-800"] {
+  background-color: #240c15 !important;
+}
+[data-theme="grimdark"] [class*="border-slate-800"] {
+  border-color: #3b1122 !important;
+}
+[data-theme="grimdark"] [class*="border-slate-700"] {
+  border-color: #541731 !important;
+}
+[data-theme="grimdark"] .bg-amber-500 {
+  background-color: #e11d48 !important;
+  color: #ffffff !important;
+}
+[data-theme="grimdark"] [class*="hover:bg-amber-400"]:hover,
+[data-theme="grimdark"] .hover\:bg-amber-400:hover {
+  background-color: #f43f5e !important;
+}
+[data-theme="grimdark"] [class*="text-amber-400"],
+[data-theme="grimdark"] [class*="text-amber-300"] {
+  color: #fb7185 !important;
+}
+[data-theme="grimdark"] [class*="border-amber-500"],
+[data-theme="grimdark"] [class*="border-amber-400"] {
+  border-color: #e11d48 !important;
+}
+[data-theme="grimdark"] [class*="bg-amber-500/"] {
+  background-color: rgba(225, 29, 72, 0.22) !important;
+}
+[data-theme="grimdark"] [class*="shadow-amber-500"] {
+  --tw-shadow-color: rgba(225, 29, 72, 0.3) !important;
+}
+[data-theme="grimdark"] [class*="ring-amber-"] {
+  --tw-ring-color: rgba(225, 29, 72, 0.5) !important;
+}
+
+/* ============================================================
+   3. КИБЕР-НЕОН / SCI-FI (Cyberpunk)
+   ============================================================ */
+[data-theme="cyberpunk"] {
+  --theme-accent: #06b6d4;
+  --theme-font: 'Rajdhani', sans-serif;
+  background-color: #020512 !important;
+  color: #e0f2fe !important;
+}
+[data-theme="cyberpunk"] [class*="bg-slate-950"] {
+  background-color: #020512 !important;
+}
+[data-theme="cyberpunk"] [class*="bg-slate-900"] {
+  background-color: #07122b !important;
+}
+[data-theme="cyberpunk"] [class*="bg-slate-850"],
+[data-theme="cyberpunk"] [class*="bg-slate-800"] {
+  background-color: #0e224f !important;
+}
+[data-theme="cyberpunk"] [class*="border-slate-800"] {
+  border-color: #123270 !important;
+}
+[data-theme="cyberpunk"] [class*="border-slate-700"] {
+  border-color: #1a4599 !important;
+}
+[data-theme="cyberpunk"] .bg-amber-500 {
+  background-color: #06b6d4 !important;
+  color: #020512 !important;
+}
+[data-theme="cyberpunk"] [class*="hover:bg-amber-400"]:hover,
+[data-theme="cyberpunk"] .hover\:bg-amber-400:hover {
+  background-color: #22d3ee !important;
+}
+[data-theme="cyberpunk"] [class*="text-amber-400"],
+[data-theme="cyberpunk"] [class*="text-amber-300"] {
+  color: #22d3ee !important;
+}
+[data-theme="cyberpunk"] [class*="border-amber-500"],
+[data-theme="cyberpunk"] [class*="border-amber-400"] {
+  border-color: #06b6d4 !important;
+}
+[data-theme="cyberpunk"] [class*="bg-amber-500/"] {
+  background-color: rgba(6, 182, 212, 0.22) !important;
+}
+[data-theme="cyberpunk"] [class*="shadow-amber-500"] {
+  --tw-shadow-color: rgba(6, 182, 212, 0.3) !important;
+}
+[data-theme="cyberpunk"] [class*="ring-amber-"] {
+  --tw-ring-color: rgba(6, 182, 212, 0.5) !important;
+}
+
+/* ============================================================
+   4. ЗОВ КТУЛХУ / МИСТИКА (Eldritch Horror)
+   ============================================================ */
+[data-theme="eldritch"] {
+  --theme-accent: #10b981;
+  --theme-font: 'Crimson Pro', serif;
+  background-color: #020a06 !important;
+  color: #d1fae5 !important;
+}
+[data-theme="eldritch"] [class*="bg-slate-950"] {
+  background-color: #020a06 !important;
+}
+[data-theme="eldritch"] [class*="bg-slate-900"] {
+  background-color: #06180e !important;
+}
+[data-theme="eldritch"] [class*="bg-slate-850"],
+[data-theme="eldritch"] [class*="bg-slate-800"] {
+  background-color: #0b2e1b !important;
+}
+[data-theme="eldritch"] [class*="border-slate-800"] {
+  border-color: #124a2b !important;
+}
+[data-theme="eldritch"] [class*="border-slate-700"] {
+  border-color: #1a663c !important;
+}
+[data-theme="eldritch"] .bg-amber-500 {
+  background-color: #10b981 !important;
+  color: #020a06 !important;
+}
+[data-theme="eldritch"] [class*="hover:bg-amber-400"]:hover,
+[data-theme="eldritch"] .hover\:bg-amber-400:hover {
+  background-color: #34d399 !important;
+}
+[data-theme="eldritch"] [class*="text-amber-400"],
+[data-theme="eldritch"] [class*="text-amber-300"] {
+  color: #34d399 !important;
+}
+[data-theme="eldritch"] [class*="border-amber-500"],
+[data-theme="eldritch"] [class*="border-amber-400"] {
+  border-color: #10b981 !important;
+}
+[data-theme="eldritch"] [class*="bg-amber-500/"] {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+}
+[data-theme="eldritch"] [class*="shadow-amber-500"] {
+  --tw-shadow-color: rgba(16, 185, 129, 0.3) !important;
+}
+[data-theme="eldritch"] [class*="ring-amber-"] {
+  --tw-ring-color: rgba(16, 185, 129, 0.5) !important;
+}
+
+/* ============================================================
+   5. СТАРИННЫЙ ПЕРГАМЕНТ / СВЕТЛАЯ ТЕМА (Parchment)
+   ============================================================ */
+[data-theme="parchment"] {
+  --theme-accent: #b45309;
+  --theme-font: 'Crimson Pro', serif;
+  background-color: #f4ecdf !important;
+  color: #1a1208 !important;
+}
+[data-theme="parchment"] [class*="bg-slate-950"] {
+  background-color: #f4ecdf !important;
+}
+[data-theme="parchment"] [class*="bg-slate-900"] {
+  background-color: #fffdf8 !important;
+}
+[data-theme="parchment"] [class*="bg-slate-850"],
+[data-theme="parchment"] [class*="bg-slate-800"] {
+  background-color: #ebdcc5 !important;
+}
+[data-theme="parchment"] [class*="border-slate-800"] {
+  border-color: #d6be9d !important;
+}
+[data-theme="parchment"] [class*="border-slate-700"] {
+  border-color: #c4a780 !important;
+}
+[data-theme="parchment"] .text-white,
+[data-theme="parchment"] [class*="text-slate-100"] {
+  color: #1a1208 !important;
+}
+[data-theme="parchment"] [class*="text-slate-200"],
+[data-theme="parchment"] [class*="text-slate-300"] {
+  color: #2b1f0f !important;
+}
+[data-theme="parchment"] [class*="text-slate-400"] {
+  color: #5c4830 !important;
+}
+[data-theme="parchment"] [class*="text-slate-500"] {
+  color: #7d6344 !important;
+}
+[data-theme="parchment"] .bg-amber-500 {
+  background-color: #b45309 !important;
+  color: #fffdf8 !important;
+}
+[data-theme="parchment"] [class*="hover:bg-amber-400"]:hover,
+[data-theme="parchment"] .hover\:bg-amber-400:hover {
+  background-color: #92400e !important;
+}
+[data-theme="parchment"] [class*="text-amber-400"],
+[data-theme="parchment"] [class*="text-amber-300"] {
+  color: #b45309 !important;
+}
+[data-theme="parchment"] [class*="border-amber-500"],
+[data-theme="parchment"] [class*="border-amber-400"] {
+  border-color: #b45309 !important;
+}
+[data-theme="parchment"] [class*="bg-amber-500/"] {
+  background-color: rgba(180, 83, 9, 0.15) !important;
 }
 
 /* Custom scrollbars */
@@ -128,16 +235,7 @@ body {
   width: 6px;
   height: 6px;
 }
-
-::-webkit-scrollbar-track {
-  background: var(--color-slate-950);
-}
-
 ::-webkit-scrollbar-thumb {
-  background: var(--color-slate-700);
+  background: var(--theme-accent, #64748b);
   border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-amber-500);
 }
