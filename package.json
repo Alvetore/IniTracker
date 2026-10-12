@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "tsc && vite build && gh-pages -d dist --nojekyll"
+    "deploy": "tsc && vite build && npx gh-pages -d dist --nojekyll"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
