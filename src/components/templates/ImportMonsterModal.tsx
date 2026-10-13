@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { CreatureTemplate } from '../../types';
-import { findMonsterByUrlOrSlug, parseMonsterFromText, convertCatalogMonsterToTemplate } from '../../utils/monsterParser';
-import { X, Link as LinkIcon, FileText, CheckCircle2, Sparkles, Plus, AlertCircle } from 'lucide-react';
+import {
+  findMonsterByUrlOrSlug,
+  parseMonsterFromText,
+  convertCatalogMonsterToTemplate,
+  extractMonsterSlugAndId,
+} from '../../utils/monsterParser';
+import { X, Link as LinkIcon, FileText, CheckCircle2, Sparkles, Plus, AlertCircle, Edit3 } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -35,7 +40,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
       return;
     }
 
-    // Auto-detect edition from url
+    // Auto-detect edition from URL
     let activeEdition = edition;
     if (trimmed.includes('next.dnd.su')) {
       activeEdition = '5e24';
@@ -45,30 +50,33 @@ export const ImportMonsterModal: React.FC<Props> = ({
       setEdition('5e14');
     }
 
-    // Check catalog lookup
-    const foundInCatalog = findMonsterByUrlOrSlug(trimmed);
+    // 1. Try finding in bundled catalogs or known monster database
+    const foundInCatalog = findMonsterByUrlOrSlug(trimmed, activeEdition);
     if (foundInCatalog) {
       const tpl = convertCatalogMonsterToTemplate(foundInCatalog);
       setPreviewTemplate(tpl);
       setStatusMessage({
-        text: `Существо «${foundInCatalog.name}» успешно найдено в каталоге (${foundInCatalog.sourceLabel})!`,
+        text: `Существо «${foundInCatalog.name}» успешно распознано (${foundInCatalog.sourceLabel})!`,
         type: 'success',
       });
       return;
     }
 
-    // Try text parser on the URL slug
-    const parsed = parseMonsterFromText(trimmed.replace(/https?:\/\/[^/]+\/bestiary\//i, '').replace(/[-_/]/g, ' '), activeEdition, trimmed);
+    // 2. Extract clean slug without numeric ID prefix (e.g. 21205-banshee -> Banshee)
+    const { rawName } = extractMonsterSlugAndId(trimmed);
+
+    // Fallback template
     const tpl: CreatureTemplate = {
       id: `tpl-${activeEdition}-${Date.now()}`,
-      name: parsed.name,
+      name: rawName,
+      englishName: rawName,
       type: 'enemy',
-      maxHp: parsed.maxHp,
-      armorClass: parsed.armorClass,
-      initiativeModifier: parsed.initiativeModifier,
-      tags: parsed.tags,
+      maxHp: 10,
+      armorClass: 12,
+      initiativeModifier: 0,
+      tags: [activeEdition, 'Бестиарий D&D'],
       notes: `Источник: ${trimmed}\nРедакция: ${activeEdition === '5e24' ? 'D&D 5e (2024)' : 'D&D 5e (2014)'}`,
-      cr: parsed.cr,
+      cr: undefined,
       edition: activeEdition,
       sourceUrl: trimmed,
       sourceLabel: activeEdition === '5e24' ? 'next.dnd.su (5e24)' : '5e14.dnd.su (5e14)',
@@ -77,7 +85,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
 
     setPreviewTemplate(tpl);
     setStatusMessage({
-      text: 'Создан шаблон по ссылке. Проверьте характеристики перед сохранением или скопируйте текст со страницы для точного импорта.',
+      text: `Имя «${rawName}» извлечено из ссылки. Проверьте характеристики ниже перед сохранением или вставьте текст статблока для полного автозаполнения.`,
       type: 'info',
     });
   };
@@ -125,7 +133,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
@@ -228,10 +236,16 @@ export const ImportMonsterModal: React.FC<Props> = ({
                   type="text"
                   value={inputUrl}
                   onChange={(e) => setInputUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleParseUrl();
+                    }
+                  }}
                   placeholder={
                     edition === '5e24'
-                      ? 'https://next.dnd.su/bestiary/127-goblin/'
-                      : 'https://5e14.dnd.su/bestiary/127-goblin/'
+                      ? 'https://next.dnd.su/bestiary/21205-banshee/'
+                      : 'https://5e14.dnd.su/bestiary/40-banshee/'
                   }
                   className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
                 />
@@ -244,7 +258,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
                 </button>
               </div>
               <p className="text-[11px] text-slate-500">
-                Поддерживаются прямые ссылки на существ как с next.dnd.su, так и с 5e14.dnd.su.
+                Поддерживаются прямые ссылки на существ как с next.dnd.su, так и с 5e14.dnd.su (например, https://next.dnd.su/bestiary/21205-banshee/).
               </p>
             </div>
           ) : (
@@ -256,7 +270,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
                 rows={5}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={'Скопируйте и вставьте текст со страницы существа на dnd.su...\nПример:\nГоблин [Goblin]\nКласс Доспеха: 15 (кожаный доспех)\nХиты: 10 (3d6)\nОпасность: 1/4\nДействия: Скимитар: +4 к попаданию...'}
+                placeholder={'Скопируйте и вставьте текст со страницы существа на dnd.su...\nПример:\nБанши [Banshee]\nКласс Защиты 12\nХиты 54 (12d8)\nОпасность 4\nСИЛ 1 (-5) ЛОВ 14 (+2) ТЕЛ 10 (+0)...'}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
               <button
@@ -289,45 +303,127 @@ export const ImportMonsterModal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Preview Card */}
+          {/* Editable Preview Card */}
           {previewTemplate && (
-            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-slate-700 mr-2">
-                    {previewTemplate.edition === '5e24' ? '5e24 (next.dnd.su)' : '5e14 (5e14.dnd.su)'}
-                  </span>
-                  <span className="text-sm font-bold text-white">{previewTemplate.name}</span>
-                </div>
-                {previewTemplate.cr && (
-                  <span className="text-xs font-semibold text-slate-400">CR {previewTemplate.cr}</span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 text-center py-2 px-3 bg-slate-900 rounded-lg border border-slate-800 text-xs">
-                <div>
-                  <span className="text-[10px] text-rose-400 block font-semibold">HP</span>
-                  <span className="font-bold text-white">{previewTemplate.maxHp}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-blue-400 block font-semibold">КД</span>
-                  <span className="font-bold text-white">{previewTemplate.armorClass}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-amber-400 block font-semibold">Иниц.</span>
-                  <span className="font-bold text-white">
-                    {previewTemplate.initiativeModifier >= 0
-                      ? `+${previewTemplate.initiativeModifier}`
-                      : previewTemplate.initiativeModifier}
+            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-3.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Параметры перед сохранением
                   </span>
                 </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-slate-700">
+                  {previewTemplate.edition === '5e24' ? '5e24 (2024)' : '5e14 (2014)'}
+                </span>
               </div>
 
-              {previewTemplate.notes && (
-                <div className="text-xs text-slate-300 font-mono bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60 line-clamp-3 whitespace-pre-line">
-                  {previewTemplate.notes}
+              {/* Name & English Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-[10px] uppercase font-semibold text-slate-400 block mb-1">
+                    Название существа
+                  </label>
+                  <input
+                    type="text"
+                    value={previewTemplate.name}
+                    onChange={(e) =>
+                      setPreviewTemplate({ ...previewTemplate, name: e.target.value })
+                    }
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-amber-500"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="text-[10px] uppercase font-semibold text-slate-400 block mb-1">
+                    Английское название
+                  </label>
+                  <input
+                    type="text"
+                    value={previewTemplate.englishName || ''}
+                    onChange={(e) =>
+                      setPreviewTemplate({ ...previewTemplate, englishName: e.target.value })
+                    }
+                    placeholder="English name"
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              {/* Stats: HP, AC, Init, CR */}
+              <div className="grid grid-cols-4 gap-2 text-center py-2 px-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                <div>
+                  <label className="text-[10px] text-rose-400 block font-semibold mb-1">HP</label>
+                  <input
+                    type="number"
+                    value={previewTemplate.maxHp}
+                    onChange={(e) =>
+                      setPreviewTemplate({
+                        ...previewTemplate,
+                        maxHp: Math.max(1, parseInt(e.target.value, 10) || 1),
+                      })
+                    }
+                    className="w-full text-center bg-slate-950 border border-slate-700 rounded-lg py-1 text-xs font-bold text-white focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-blue-400 block font-semibold mb-1">КД</label>
+                  <input
+                    type="text"
+                    value={previewTemplate.armorClass}
+                    onChange={(e) =>
+                      setPreviewTemplate({
+                        ...previewTemplate,
+                        armorClass: e.target.value,
+                      })
+                    }
+                    className="w-full text-center bg-slate-950 border border-slate-700 rounded-lg py-1 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-amber-400 block font-semibold mb-1">Иниц.</label>
+                  <input
+                    type="number"
+                    value={previewTemplate.initiativeModifier}
+                    onChange={(e) =>
+                      setPreviewTemplate({
+                        ...previewTemplate,
+                        initiativeModifier: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                    className="w-full text-center bg-slate-950 border border-slate-700 rounded-lg py-1 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-emerald-400 block font-semibold mb-1">CR</label>
+                  <input
+                    type="text"
+                    value={previewTemplate.cr || ''}
+                    onChange={(e) =>
+                      setPreviewTemplate({
+                        ...previewTemplate,
+                        cr: e.target.value,
+                      })
+                    }
+                    placeholder="—"
+                    className="w-full text-center bg-slate-950 border border-slate-700 rounded-lg py-1 text-xs font-bold text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-[10px] uppercase font-semibold text-slate-400 block mb-1">
+                  Заметки / Особенности / Действия
+                </label>
+                <textarea
+                  rows={3}
+                  value={previewTemplate.notes || ''}
+                  onChange={(e) =>
+                    setPreviewTemplate({ ...previewTemplate, notes: e.target.value })
+                  }
+                  className="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-300 font-mono focus:outline-none focus:border-amber-500"
+                />
+              </div>
             </div>
           )}
         </div>
