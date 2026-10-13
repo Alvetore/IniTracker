@@ -255,18 +255,18 @@ export function parseMonsterFromText(
 
   // Extract Armor Class (Класс Доспеха / Класс Защиты / КД / КЗ / Armor Class)
   let armorClass: string | number = dictMatch ? dictMatch.armorClass : 12;
-  const acMatch = text.match(
-    /(?:Класс\s+(?:Доспеха|Защиты)|КД|КЗ|Armor\s+Class|AC)\s*[:—–-]?\s*(\d+)(?:\s*\(([^)]+)\))?/i
-  );
+  const acMatch =
+    text.match(/(?:Класс\s+(?:Доспеха|Защиты)|КД|КЗ|Armor\s+Class|AC)\s*[:—–-]?\s*(\d+)/i) ||
+    text.match(/(?:Класс\s+(?:Доспеха|Защиты)|КД|КЗ|Armor\s+Class|AC)[^\d\n\r]*(\d+)/i);
   if (acMatch) {
     armorClass = parseInt(acMatch[1], 10) || 12;
   }
 
-  // Extract Hit Points (Хиты / Хит-поинты / Hit Points / HP)
+  // Extract Hit Points (Хиты / Хит-поинты / Очки здоровья / Hit Points / HP)
   let maxHp = dictMatch ? dictMatch.maxHp : 10;
-  const hpMatch = text.match(
-    /(?:Хит[- ]?поинты|Хиты|Hit\s+Points|HP)\s*[:—–-]?\s*(\d+)(?:\s*\(([^)]+)\))?/i
-  );
+  const hpMatch =
+    text.match(/(?:Хит[- ]?поинты|Хиты|Очки\s+здоровья|Здоровье|Hit\s+Points|HP)\s*[:—–-]?\s*(\d+)/i) ||
+    text.match(/(?:Хит[- ]?поинты|Хиты|Очки\s+здоровья|Здоровье|Hit\s+Points|HP)[^\d\n\r]*(\d+)/i);
   if (hpMatch) {
     maxHp = parseInt(hpMatch[1], 10) || 10;
   }
