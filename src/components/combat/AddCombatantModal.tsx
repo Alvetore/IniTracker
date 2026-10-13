@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Combatant, CreatureTemplate, CreatureType, PartyMember, DiceSystem } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
-import { X, UserPlus, Sparkles, Plus, Users } from 'lucide-react';
+import { X, UserPlus, Sparkles, Plus, Users, Zap } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -47,6 +47,10 @@ export const AddCombatantModal: React.FC<Props> = ({
   const [customInitMod, setCustomInitMod] = useState<number>(0);
   const [customNotes, setCustomNotes] = useState('');
 
+  // Initiative roll mode
+  const [initMode, setInitMode] = useState<'auto' | 'manual'>('auto');
+  const [manualInitVal, setManualInitVal] = useState<number>(10);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -60,7 +64,10 @@ export const AddCombatantModal: React.FC<Props> = ({
 
       for (let i = 1; i <= count; i++) {
         const name = count > 1 ? `${tpl.name} ${i}` : tpl.name;
-        const { total: initVal } = rollInitiativeForSystem(diceSystem, tpl.initiativeModifier);
+        const initVal =
+          initMode === 'manual'
+            ? manualInitVal
+            : rollInitiativeForSystem(diceSystem, tpl.initiativeModifier).total;
 
         newCombatants.push({
           id: `combatant-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
@@ -88,7 +95,10 @@ export const AddCombatantModal: React.FC<Props> = ({
 
       for (let i = 1; i <= count; i++) {
         const name = count > 1 ? `${hero.name} ${i}` : hero.name;
-        const { total: initVal } = rollInitiativeForSystem(diceSystem, hero.initiativeModifier);
+        const initVal =
+          initMode === 'manual'
+            ? manualInitVal
+            : rollInitiativeForSystem(diceSystem, hero.initiativeModifier).total;
 
         newCombatants.push({
           id: `hero-${hero.id}-${Date.now()}-${i}`,
@@ -114,7 +124,10 @@ export const AddCombatantModal: React.FC<Props> = ({
 
       for (let i = 1; i <= count; i++) {
         const name = count > 1 ? `${customName.trim()} ${i}` : customName.trim();
-        const { total: initVal } = rollInitiativeForSystem(diceSystem, customInitMod);
+        const initVal =
+          initMode === 'manual'
+            ? manualInitVal
+            : rollInitiativeForSystem(diceSystem, customInitMod).total;
 
         newCombatants.push({
           id: `combatant-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
@@ -314,6 +327,57 @@ export const AddCombatantModal: React.FC<Props> = ({
                 className="w-16 bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-center text-xs text-white"
               />
             </div>
+          </div>
+
+          {/* Initiative Selection */}
+          <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                Инициатива
+              </label>
+
+              <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setInitMode('auto')}
+                  className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                    initMode === 'auto'
+                      ? 'bg-amber-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🎲 Авто-бросок
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInitMode('manual')}
+                  className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                    initMode === 'manual'
+                      ? 'bg-amber-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ✍️ Вручную
+                </button>
+              </div>
+            </div>
+
+            {initMode === 'auto' ? (
+              <p className="text-[11px] text-slate-400">
+                Инициатива будет брошена автоматически по системе {diceSystem}.
+              </p>
+            ) : (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-slate-400">Точное значение:</label>
+                <input
+                  type="number"
+                  value={manualInitVal}
+                  onChange={(e) => setManualInitVal(parseInt(e.target.value) || 0)}
+                  className="w-20 bg-slate-900 border border-slate-700 rounded-lg py-1 px-2 text-center text-sm font-bold text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            )}
           </div>
 
           {/* Submit */}

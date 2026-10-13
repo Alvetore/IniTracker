@@ -16,6 +16,9 @@ import { CombatTrackerView } from './components/combat/CombatTrackerView';
 import { DiceRollerModal } from './components/common/DiceRollerModal';
 import { DataManagementModal } from './components/common/DataManagementModal';
 import { ThemePickerModal } from './components/common/ThemePickerModal';
+import { AddToCombatOptions } from './components/combat/AddToCombatModal';
+import { CatalogMonster } from './types/bestiary';
+import { convertCatalogMonsterToTemplate } from './utils/monsterParser';
 import { THEMES, ThemeId } from './types/theme';
 
 export const App: React.FC = () => {
@@ -346,7 +349,7 @@ export const App: React.FC = () => {
     setActiveTab('combat');
   };
 
-  const handleAddCreatureToCombat = (tpl: CreatureTemplate, count: number = 1) => {
+  const handleAddCreatureToCombatWithOptions = (options: AddToCombatOptions) => {
     const diceSystem = combatState?.diceSystem || 'd20';
     const state = combatState || {
       isActive: false,
@@ -357,15 +360,39 @@ export const App: React.FC = () => {
       diceSystem,
     };
 
+    const tpl: CreatureTemplate =
+      'stats' in options.creature
+        ? convertCatalogMonsterToTemplate(options.creature as CatalogMonster)
+        : (options.creature as CreatureTemplate);
+
+    const count = Math.max(1, options.count);
     const newCombatants: Combatant[] = [];
     const existingCount = state.combatants.filter((c) =>
       c.name.toLowerCase().startsWith(tpl.name.toLowerCase())
     ).length;
 
+    // Calculate group roll in advance if in auto mode
+    let groupRollVal = 0;
+    if (options.initiativeMode === 'manual') {
+      groupRollVal = options.manualInitiative;
+    } else {
+      const { total } = rollInitiativeForSystem(diceSystem, tpl.initiativeModifier);
+      groupRollVal = total;
+    }
+
     for (let i = 1; i <= count; i++) {
       const num = existingCount + i;
       const name = existingCount > 0 || count > 1 ? `${tpl.name} ${num}` : tpl.name;
-      const { total: initVal } = rollInitiativeForSystem(diceSystem, tpl.initiativeModifier);
+
+      let initVal: number;
+      if (options.initiativeMode === 'manual') {
+        initVal = options.manualInitiative;
+      } else if (options.groupInitiative) {
+        initVal = groupRollVal;
+      } else {
+        const { total } = rollInitiativeForSystem(diceSystem, tpl.initiativeModifier);
+        initVal = total;
+      }
 
       newCombatants.push({
         id: `combatant-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
@@ -378,7 +405,10 @@ export const App: React.FC = () => {
           max: tpl.maxHp,
           temp: 0,
         },
-        armorClass: tpl.armorClass,
+        armorClass:
+          typeof tpl.armorClass === 'number'
+            ? tpl.armorClass
+            : parseInt(String(tpl.armorClass)) || 10,
         conditions: [],
         notes: tpl.notes || '',
         isDefeated: false,
@@ -392,12 +422,17 @@ export const App: React.FC = () => {
       updatedCombatants.sort((a, b) => b.initiative - a.initiative);
     }
 
+    const modeText =
+      options.initiativeMode === 'manual'
+        ? `ручная иниц. ${options.manualInitiative}`
+        : `авто-бросок (${options.groupInitiative ? 'общий' : 'раздельный'})`;
+
     const newLog = [
       {
         id: String(Date.now()),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         round: state.round,
-        message: `Существо "${tpl.name}" добавлено в бой из бестиария (+${count})`,
+        message: `Существо "${tpl.name}" добавлено в бой из бестиария (+${count}, ${modeText})`,
         type: 'system' as const,
       },
       ...state.log,
@@ -407,6 +442,21 @@ export const App: React.FC = () => {
       ...state,
       combatants: updatedCombatants,
       log: newLog,
+    });
+
+    if (options.navigateNow) {
+      setActiveTab('combat');
+    }
+  };
+
+  const handleAddCreatureToCombat = (tpl: CreatureTemplate, count: number = 1) => {
+    handleAddCreatureToCombatWithOptions({
+      creature: tpl,
+      count,
+      initiativeMode: 'auto',
+      groupInitiative: true,
+      manualInitiative: 10,
+      navigateNow: false,
     });
   };
 
@@ -461,7 +511,9 @@ export const App: React.FC = () => {
             onDeleteTemplate={handleDeleteTemplate}
             onDuplicateTemplate={handleDuplicateTemplate}
             onAddToCombat={handleAddCreatureToCombat}
+            onAddToCombatWithOptions={handleAddCreatureToCombatWithOptions}
             onNavigateToCombat={() => setActiveTab('combat')}
+            diceSystem={combatState?.diceSystem || 'd20'}
           />
         )}
 

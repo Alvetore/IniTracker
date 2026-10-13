@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CreatureTemplate, CreatureType } from '../../types';
+import { CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { CatalogMonster, BestiarySection } from '../../types/bestiary';
 import { BESTIARY_5E14 } from '../../data/bestiary5e14';
 import { BESTIARY_5E24 } from '../../data/bestiary5e24';
@@ -7,6 +7,7 @@ import { convertCatalogMonsterToTemplate } from '../../utils/monsterParser';
 import { TemplateFormModal } from './TemplateFormModal';
 import { CatalogMonsterDetailsModal } from './CatalogMonsterDetailsModal';
 import { ImportMonsterModal } from './ImportMonsterModal';
+import { AddToCombatModal, AddToCombatOptions } from '../combat/AddToCombatModal';
 import {
   Plus,
   Search,
@@ -34,7 +35,9 @@ interface Props {
   onDeleteTemplate: (id: string) => void;
   onDuplicateTemplate: (template: CreatureTemplate) => void;
   onAddToCombat?: (template: CreatureTemplate) => void;
+  onAddToCombatWithOptions?: (options: AddToCombatOptions) => void;
   onNavigateToCombat?: () => void;
+  diceSystem?: DiceSystem;
 }
 
 export const TemplatesView: React.FC<Props> = ({
@@ -43,7 +46,9 @@ export const TemplatesView: React.FC<Props> = ({
   onDeleteTemplate,
   onDuplicateTemplate,
   onAddToCombat,
+  onAddToCombatWithOptions,
   onNavigateToCombat,
+  diceSystem = 'd20',
 }) => {
   // Current active section: 'saved' | '5e24' | '5e14'
   const [activeSection, setActiveSection] = useState<BestiarySection>('saved');
@@ -67,6 +72,10 @@ export const TemplatesView: React.FC<Props> = ({
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importEdition, setImportEdition] = useState<'5e14' | '5e24'>('5e24');
+
+  // Add to Combat Modal state
+  const [combatCandidate, setCombatCandidate] = useState<CreatureTemplate | CatalogMonster | null>(null);
+  const [isAddToCombatOpen, setIsAddToCombatOpen] = useState(false);
 
   // Feedback for added monsters (IDs added in current session)
   const [addedMonsterIds, setAddedMonsterIds] = useState<Set<string>>(new Set());
@@ -161,25 +170,40 @@ export const TemplatesView: React.FC<Props> = ({
     }, 4000);
   };
 
-  const handleAddCatalogMonsterToCombat = (monster: CatalogMonster) => {
-    const template = convertCatalogMonsterToTemplate(monster);
-    if (onAddToCombat) {
+  const canAddToCombat = Boolean(onAddToCombatWithOptions || onAddToCombat);
+
+  const handleOpenAddToCombat = (creature: CreatureTemplate | CatalogMonster) => {
+    setCombatCandidate(creature);
+    setIsAddToCombatOpen(true);
+  };
+
+  const handleConfirmAddToCombat = (options: AddToCombatOptions) => {
+    if (onAddToCombatWithOptions) {
+      onAddToCombatWithOptions(options);
+    } else if (onAddToCombat) {
+      const template = 'stats' in options.creature
+        ? convertCatalogMonsterToTemplate(options.creature as CatalogMonster)
+        : (options.creature as CreatureTemplate);
       onAddToCombat(template);
-      setToastMessage(`Существо «${monster.name}» добавлено в активный бой!`);
-      setTimeout(() => {
-        setToastMessage(null);
-      }, 4000);
+    }
+
+    const countStr = options.count > 1 ? ` (${options.count} шт.)` : '';
+    setToastMessage(`Существо «${options.creature.name}»${countStr} добавлено в активный бой!`);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+
+    if (options.navigateNow && onNavigateToCombat) {
+      onNavigateToCombat();
     }
   };
 
+  const handleAddCatalogMonsterToCombat = (monster: CatalogMonster) => {
+    handleOpenAddToCombat(monster);
+  };
+
   const handleAddSavedCreatureToCombat = (template: CreatureTemplate) => {
-    if (onAddToCombat) {
-      onAddToCombat(template);
-      setToastMessage(`Существо «${template.name}» добавлено в активный бой!`);
-      setTimeout(() => {
-        setToastMessage(null);
-      }, 4000);
-    }
+    handleOpenAddToCombat(template);
   };
 
   const getTypeBadge = (type: CreatureType) => {
@@ -634,7 +658,7 @@ export const TemplatesView: React.FC<Props> = ({
                       <span className="text-[11px] text-slate-500 truncate">
                         {template.tags[0] || 'Существо'}
                       </span>
-                      {onAddToCombat && (
+                      {canAddToCombat && (
                         <button
                           type="button"
                           onClick={() => handleAddSavedCreatureToCombat(template)}
@@ -924,7 +948,7 @@ export const TemplatesView: React.FC<Props> = ({
                         <span className="hidden sm:inline">Инфо</span>
                       </button>
 
-                      {onAddToCombat && (
+                      {canAddToCombat && (
                         <button
                           onClick={() => handleAddCatalogMonsterToCombat(monster)}
                           className="px-2.5 sm:px-3 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm whitespace-nowrap"
@@ -980,7 +1004,7 @@ export const TemplatesView: React.FC<Props> = ({
         isOpen={isInspectModalOpen}
         onClose={() => setIsInspectModalOpen(false)}
         onAddToPersonal={handleAddMonsterToPersonal}
-        onAddToCombat={handleAddCatalogMonsterToCombat}
+        onAddToCombat={canAddToCombat ? handleAddCatalogMonsterToCombat : undefined}
         isAlreadyAdded={inspectingMonster ? addedMonsterIds.has(inspectingMonster.id) : false}
       />
 
@@ -990,6 +1014,15 @@ export const TemplatesView: React.FC<Props> = ({
         onClose={() => setIsImportModalOpen(false)}
         onSaveTemplate={onSaveTemplate}
         initialEdition={importEdition}
+      />
+
+      {/* 4. Add to Combat Modal with initiative roll and count */}
+      <AddToCombatModal
+        isOpen={isAddToCombatOpen}
+        onClose={() => setIsAddToCombatOpen(false)}
+        creature={combatCandidate}
+        diceSystem={diceSystem}
+        onConfirm={handleConfirmAddToCombat}
       />
     </div>
   );
