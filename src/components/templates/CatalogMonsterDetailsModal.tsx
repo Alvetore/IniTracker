@@ -1,12 +1,13 @@
 import React from 'react';
 import { CatalogMonster } from '../../types/bestiary';
-import { X, ExternalLink, Plus, Shield, Heart, Zap, Footprints, Skull, BookOpen } from 'lucide-react';
+import { X, ExternalLink, Plus, Shield, Heart, Zap, Footprints, Skull, BookOpen, Swords } from 'lucide-react';
 
 interface Props {
   monster: CatalogMonster | null;
   isOpen: boolean;
   onClose: () => void;
   onAddToPersonal: (monster: CatalogMonster) => void;
+  onAddToCombat?: (monster: CatalogMonster) => void;
   isAlreadyAdded?: boolean;
 }
 
@@ -15,6 +16,7 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
   isOpen,
   onClose,
   onAddToPersonal,
+  onAddToCombat,
   isAlreadyAdded = false,
 }) => {
   if (!isOpen || !monster) return null;
@@ -234,13 +236,26 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
             Открыть на {monster.sourceLabel}
           </a>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto order-1 sm:order-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2 flex-wrap sm:flex-nowrap">
             <button
               onClick={onClose}
-              className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs sm:text-sm font-medium transition"
+              className="px-3 sm:px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs sm:text-sm font-medium transition"
             >
               Закрыть
             </button>
+            {onAddToCombat && (
+              <button
+                onClick={() => {
+                  onAddToCombat(monster);
+                  onClose();
+                }}
+                className="flex-1 sm:flex-initial px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-lg shadow-rose-600/20"
+                title="Добавить это существо в текущий бой"
+              >
+                <Swords className="w-4 h-4" />
+                + В бой
+              </button>
+            )}
             <button
               onClick={() => {
                 onAddToPersonal(monster);
@@ -253,7 +268,7 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
               }`}
             >
               <Plus className="w-4 h-4" />
-              {isAlreadyAdded ? 'Добавить еще копию' : '+ В личный бестиарий'}
+              {isAlreadyAdded ? 'Добавить копию' : '+ В бестиарий'}
             </button>
           </div>
         </div>

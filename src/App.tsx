@@ -346,6 +346,70 @@ export const App: React.FC = () => {
     setActiveTab('combat');
   };
 
+  const handleAddCreatureToCombat = (tpl: CreatureTemplate, count: number = 1) => {
+    const diceSystem = combatState?.diceSystem || 'd20';
+    const state = combatState || {
+      isActive: false,
+      round: 1,
+      currentTurnIndex: 0,
+      combatants: [],
+      log: [],
+      diceSystem,
+    };
+
+    const newCombatants: Combatant[] = [];
+    const existingCount = state.combatants.filter((c) =>
+      c.name.toLowerCase().startsWith(tpl.name.toLowerCase())
+    ).length;
+
+    for (let i = 1; i <= count; i++) {
+      const num = existingCount + i;
+      const name = existingCount > 0 || count > 1 ? `${tpl.name} ${num}` : tpl.name;
+      const { total: initVal } = rollInitiativeForSystem(diceSystem, tpl.initiativeModifier);
+
+      newCombatants.push({
+        id: `combatant-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
+        name,
+        type: tpl.type,
+        initiative: initVal,
+        initiativeModifier: tpl.initiativeModifier,
+        hp: {
+          current: tpl.maxHp,
+          max: tpl.maxHp,
+          temp: 0,
+        },
+        armorClass: tpl.armorClass,
+        conditions: [],
+        notes: tpl.notes || '',
+        isDefeated: false,
+        isDelayed: false,
+        templateId: tpl.id,
+      });
+    }
+
+    let updatedCombatants = [...state.combatants, ...newCombatants];
+    if (state.isActive) {
+      updatedCombatants.sort((a, b) => b.initiative - a.initiative);
+    }
+
+    const newLog = [
+      {
+        id: String(Date.now()),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        round: state.round,
+        message: `Существо "${tpl.name}" добавлено в бой из бестиария (+${count})`,
+        type: 'system' as const,
+      },
+      ...state.log,
+    ];
+
+    handleUpdateCombatState({
+      ...state,
+      combatants: updatedCombatants,
+      log: newLog,
+    });
+  };
+
   return (
     <div
       data-theme={currentTheme}
@@ -396,6 +460,8 @@ export const App: React.FC = () => {
             onSaveTemplate={handleSaveSingleTemplate}
             onDeleteTemplate={handleDeleteTemplate}
             onDuplicateTemplate={handleDuplicateTemplate}
+            onAddToCombat={handleAddCreatureToCombat}
+            onNavigateToCombat={() => setActiveTab('combat')}
           />
         )}
 

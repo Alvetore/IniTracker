@@ -25,6 +25,7 @@ import {
   Sparkles,
   Layers,
   Filter,
+  Swords,
 } from 'lucide-react';
 
 interface Props {
@@ -32,6 +33,8 @@ interface Props {
   onSaveTemplate: (template: CreatureTemplate) => void;
   onDeleteTemplate: (id: string) => void;
   onDuplicateTemplate: (template: CreatureTemplate) => void;
+  onAddToCombat?: (template: CreatureTemplate) => void;
+  onNavigateToCombat?: () => void;
 }
 
 export const TemplatesView: React.FC<Props> = ({
@@ -39,6 +42,8 @@ export const TemplatesView: React.FC<Props> = ({
   onSaveTemplate,
   onDeleteTemplate,
   onDuplicateTemplate,
+  onAddToCombat,
+  onNavigateToCombat,
 }) => {
   // Current active section: 'saved' | '5e24' | '5e14'
   const [activeSection, setActiveSection] = useState<BestiarySection>('saved');
@@ -156,6 +161,27 @@ export const TemplatesView: React.FC<Props> = ({
     }, 4000);
   };
 
+  const handleAddCatalogMonsterToCombat = (monster: CatalogMonster) => {
+    const template = convertCatalogMonsterToTemplate(monster);
+    if (onAddToCombat) {
+      onAddToCombat(template);
+      setToastMessage(`Существо «${monster.name}» добавлено в активный бой!`);
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 4000);
+    }
+  };
+
+  const handleAddSavedCreatureToCombat = (template: CreatureTemplate) => {
+    if (onAddToCombat) {
+      onAddToCombat(template);
+      setToastMessage(`Существо «${template.name}» добавлено в активный бой!`);
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 4000);
+    }
+  };
+
   const getTypeBadge = (type: CreatureType) => {
     switch (type) {
       case 'enemy':
@@ -176,12 +202,26 @@ export const TemplatesView: React.FC<Props> = ({
     <div className="space-y-4 sm:space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-900/90 text-white border border-emerald-500/50 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <Check className="w-5 h-5 text-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 text-white border border-slate-700 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 backdrop-blur-md">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+            ✓
+          </div>
           <span className="text-xs sm:text-sm font-semibold">{toastMessage}</span>
+          {onNavigateToCombat && (
+            <button
+              onClick={() => {
+                setToastMessage(null);
+                onNavigateToCombat();
+              }}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-md whitespace-nowrap ml-1"
+            >
+              <Swords className="w-3.5 h-3.5" />
+              В бой
+            </button>
+          )}
           <button
             onClick={() => setToastMessage(null)}
-            className="text-emerald-300 hover:text-white ml-2 text-xs"
+            className="text-slate-400 hover:text-white ml-1 text-xs p-1"
           >
             ✕
           </button>
@@ -583,9 +623,27 @@ export const TemplatesView: React.FC<Props> = ({
 
                       {/* Notes / Actions */}
                       {template.notes && (
-                        <div className="bg-slate-950/40 rounded-xl p-3 border border-slate-800/50 text-xs text-slate-300 font-mono line-clamp-3 whitespace-pre-line">
+                        <div className="bg-slate-950/40 rounded-xl p-3 border border-slate-800/50 text-xs text-slate-300 font-mono line-clamp-3 whitespace-pre-line mb-3">
                           {template.notes}
                         </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Card Actions */}
+                    <div className="pt-2.5 mt-auto border-t border-slate-800/80 flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-slate-500 truncate">
+                        {template.tags[0] || 'Существо'}
+                      </span>
+                      {onAddToCombat && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddSavedCreatureToCombat(template)}
+                          className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                          title="Добавить это существо в текущий бой"
+                        >
+                          <Swords className="w-3.5 h-3.5" />
+                          + В бой
+                        </button>
                       )}
                     </div>
                   </div>
@@ -856,18 +914,30 @@ export const TemplatesView: React.FC<Props> = ({
                     </div>
 
                     {/* Card Actions Bottom */}
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 sm:gap-2">
                       <button
                         onClick={() => handleOpenInspect(monster)}
-                        className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition flex items-center gap-1"
+                        className="px-2.5 sm:px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition flex items-center gap-1"
+                        title="Подробнее о существе"
                       >
                         <Info className="w-3.5 h-3.5" />
-                        Подробнее
+                        <span className="hidden sm:inline">Инфо</span>
                       </button>
+
+                      {onAddToCombat && (
+                        <button
+                          onClick={() => handleAddCatalogMonsterToCombat(monster)}
+                          className="px-2.5 sm:px-3 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm whitespace-nowrap"
+                          title="Добавить в текущий бой"
+                        >
+                          <Swords className="w-3.5 h-3.5" />
+                          + В бой
+                        </button>
+                      )}
 
                       <button
                         onClick={() => handleAddMonsterToPersonal(monster)}
-                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md ${
+                        className={`flex-1 py-2 px-2.5 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md ${
                           isAdded
                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
                             : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
@@ -876,12 +946,12 @@ export const TemplatesView: React.FC<Props> = ({
                         {isAdded ? (
                           <>
                             <Check className="w-3.5 h-3.5" />
-                            Добавлено (+еще)
+                            <span className="truncate">В бестиарии</span>
                           </>
                         ) : (
                           <>
                             <Plus className="w-3.5 h-3.5" />
-                            В личный бестиарий
+                            <span className="truncate">В бестиарий</span>
                           </>
                         )}
                       </button>
@@ -910,6 +980,7 @@ export const TemplatesView: React.FC<Props> = ({
         isOpen={isInspectModalOpen}
         onClose={() => setIsInspectModalOpen(false)}
         onAddToPersonal={handleAddMonsterToPersonal}
+        onAddToCombat={handleAddCatalogMonsterToCombat}
         isAlreadyAdded={inspectingMonster ? addedMonsterIds.has(inspectingMonster.id) : false}
       />
 
