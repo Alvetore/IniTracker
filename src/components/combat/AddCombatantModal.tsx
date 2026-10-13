@@ -208,7 +208,7 @@ export const AddCombatantModal: React.FC<Props> = ({
               >
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} (HP: {t.maxHp}, КД: {t.armorClass})
+                    {t.name} {t.cr ? `[CR ${t.cr}]` : ''} {t.edition ? `(${t.edition})` : ''} — HP: {t.maxHp}, КД: {t.armorClass}
                   </option>
                 ))}
               </select>

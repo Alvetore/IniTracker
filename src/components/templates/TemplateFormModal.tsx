@@ -30,6 +30,11 @@ export const TemplateFormModal: React.FC<Props> = ({
   initialTemplate,
 }) => {
   const [name, setName] = useState('');
+  const [englishName, setEnglishName] = useState('');
+  const [cr, setCr] = useState('');
+  const [edition, setEdition] = useState<'5e14' | '5e24' | 'custom'>('custom');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceLabel, setSourceLabel] = useState('');
   const [type, setType] = useState<CreatureType>('enemy');
   const [maxHp, setMaxHp] = useState<number>(10);
   const [armorClass, setArmorClass] = useState<string>('12');
@@ -42,6 +47,11 @@ export const TemplateFormModal: React.FC<Props> = ({
   useEffect(() => {
     if (initialTemplate) {
       setName(initialTemplate.name);
+      setEnglishName(initialTemplate.englishName || '');
+      setCr(initialTemplate.cr || '');
+      setEdition(initialTemplate.edition || 'custom');
+      setSourceUrl(initialTemplate.sourceUrl || '');
+      setSourceLabel(initialTemplate.sourceLabel || '');
       setType(initialTemplate.type);
       setMaxHp(initialTemplate.maxHp);
       setArmorClass(String(initialTemplate.armorClass));
@@ -51,6 +61,11 @@ export const TemplateFormModal: React.FC<Props> = ({
     } else {
       // Default empty values for new template
       setName('');
+      setEnglishName('');
+      setCr('');
+      setEdition('custom');
+      setSourceUrl('');
+      setSourceLabel('');
       setType('enemy');
       setMaxHp(12);
       setArmorClass('12');
@@ -98,12 +113,17 @@ export const TemplateFormModal: React.FC<Props> = ({
     const templateToSave: CreatureTemplate = {
       id: initialTemplate ? initialTemplate.id : `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: name.trim(),
+      englishName: englishName.trim() || undefined,
       type,
       maxHp: Number(maxHp),
       armorClass: armorClass.trim() || '10',
       initiativeModifier: Number(initiativeModifier),
       tags,
       notes: notes.trim(),
+      cr: cr.trim() || undefined,
+      edition: edition !== 'custom' ? edition : undefined,
+      sourceUrl: sourceUrl.trim() || undefined,
+      sourceLabel: sourceLabel.trim() || undefined,
       createdAt: initialTemplate ? initialTemplate.createdAt : Date.now(),
     };
 
@@ -148,18 +168,33 @@ export const TemplateFormModal: React.FC<Props> = ({
 
           {/* Name & Type */}
           <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Имя существа / NPC <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="например: Вождь орков, Гоблин-лучник, Трактирщик"
-                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm transition"
-                autoFocus
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Имя существа / NPC <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="например: Вождь орков, Гоблин-лучник"
+                  className="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm transition"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Опасность (CR)
+                </label>
+                <input
+                  type="text"
+                  value={cr}
+                  onChange={(e) => setCr(e.target.value)}
+                  placeholder="1/4, 2, 5"
+                  className="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-2.5 text-center text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm transition"
+                />
+              </div>
             </div>
 
             <div>

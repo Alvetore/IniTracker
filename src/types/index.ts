@@ -11,12 +11,17 @@ export interface Condition {
 export interface CreatureTemplate {
   id: string;
   name: string;
+  englishName?: string;
   type: CreatureType;
   maxHp: number;
   armorClass: string | number; // КД / Защита
   initiativeModifier: number; // +2, 0, -1
   tags: string[]; // ['Гоблиноид', 'Лучник']
   notes: string; // Действия, статы, способности
+  cr?: string;
+  edition?: '5e14' | '5e24' | 'custom';
+  sourceUrl?: string;
+  sourceLabel?: string;
   createdAt: number;
 }
 

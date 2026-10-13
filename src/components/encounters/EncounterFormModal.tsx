@@ -352,7 +352,7 @@ export const EncounterFormModal: React.FC<Props> = ({
                 >
                   {templates.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name} (HP: {t.maxHp}, КД: {t.armorClass}, Иниц: {t.initiativeModifier >= 0 ? `+${t.initiativeModifier}` : t.initiativeModifier})
+                      {t.name} {t.cr ? `[CR ${t.cr}]` : ''} {t.edition ? `(${t.edition})` : ''} (HP: {t.maxHp}, КД: {t.armorClass}, Иниц: {t.initiativeModifier >= 0 ? `+${t.initiativeModifier}` : t.initiativeModifier})
                     </option>
                   ))}
                 </select>
