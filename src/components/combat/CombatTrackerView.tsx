@@ -484,6 +484,45 @@ export const CombatTrackerView: React.FC<Props> = ({
       combatants: updated,
       log: newLog,
     });
+
+    setHpModalCombatant((prev) => {
+      if (prev && prev.id === combatantId) {
+        return updated.find((c) => c.id === combatantId) || prev;
+      }
+      return prev;
+    });
+  };
+
+  const handleQuickInlineDamage = (combatant: Combatant, damage: number) => {
+    let remaining = damage;
+    let newTemp = combatant.hp.temp;
+    let newHp = combatant.hp.current;
+    if (newTemp > 0) {
+      if (remaining >= newTemp) {
+        remaining -= newTemp;
+        newTemp = 0;
+      } else {
+        newTemp -= remaining;
+        remaining = 0;
+      }
+    }
+    newHp = Math.max(0, newHp - remaining);
+    handleApplyHpChange(
+      combatant.id,
+      newHp,
+      newTemp,
+      `${combatant.name} -${damage} HP. HP: ${newHp}/${combatant.hp.max}`
+    );
+  };
+
+  const handleQuickInlineHeal = (combatant: Combatant, heal: number) => {
+    const newHp = Math.min(combatant.hp.max, combatant.hp.current + heal);
+    handleApplyHpChange(
+      combatant.id,
+      newHp,
+      combatant.hp.temp,
+      `${combatant.name} +${heal} HP. HP: ${newHp}/${combatant.hp.max}`
+    );
   };
 
   // Add condition
@@ -996,19 +1035,19 @@ export const CombatTrackerView: React.FC<Props> = ({
                       {/* Quick inline buttons */}
                       <div className="grid grid-cols-4 sm:flex items-center gap-1.5 mt-2">
                         <button
-                          onClick={() => handleApplyHpChange(combatant.id, Math.max(0, combatant.hp.current - 5), combatant.hp.temp, `${combatant.name} -5 HP`)}
+                          onClick={() => handleQuickInlineDamage(combatant, 5)}
                           className="py-1 px-2 bg-slate-950 hover:bg-red-950 border border-slate-800 text-red-400 rounded-lg text-xs font-bold text-center active:scale-95 transition"
                         >
                           -5
                         </button>
                         <button
-                          onClick={() => handleApplyHpChange(combatant.id, Math.max(0, combatant.hp.current - 1), combatant.hp.temp, `${combatant.name} -1 HP`)}
+                          onClick={() => handleQuickInlineDamage(combatant, 1)}
                           className="py-1 px-2 bg-slate-950 hover:bg-red-950 border border-slate-800 text-red-400 rounded-lg text-xs font-bold text-center active:scale-95 transition"
                         >
                           -1
                         </button>
                         <button
-                          onClick={() => handleApplyHpChange(combatant.id, Math.min(combatant.hp.max, combatant.hp.current + 5), combatant.hp.temp, `${combatant.name} +5 HP`)}
+                          onClick={() => handleQuickInlineHeal(combatant, 5)}
                           className="py-1 px-2 bg-slate-950 hover:bg-emerald-950 border border-slate-800 text-emerald-400 rounded-lg text-xs font-bold text-center active:scale-95 transition"
                         >
                           +5
@@ -1191,14 +1230,22 @@ export const CombatTrackerView: React.FC<Props> = ({
       <HpAdjustModal
         isOpen={hpModalCombatant !== null}
         onClose={() => setHpModalCombatant(null)}
-        combatant={hpModalCombatant}
+        combatant={
+          hpModalCombatant
+            ? combatState?.combatants.find((c) => c.id === hpModalCombatant.id) || hpModalCombatant
+            : null
+        }
         onApplyHpChange={handleApplyHpChange}
       />
 
       <ConditionPickerModal
         isOpen={conditionModalCombatant !== null}
         onClose={() => setConditionModalCombatant(null)}
-        combatant={conditionModalCombatant}
+        combatant={
+          conditionModalCombatant
+            ? combatState?.combatants.find((c) => c.id === conditionModalCombatant.id) || conditionModalCombatant
+            : null
+        }
         onAddCondition={handleAddCondition}
       />
 

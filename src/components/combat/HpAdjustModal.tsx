@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Combatant } from '../../types';
-import { X, Heart, ShieldAlert, Sparkles, Plus, Minus } from 'lucide-react';
+import { X, Heart, ShieldAlert, Sparkles, Plus, Minus, Check } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -21,16 +21,26 @@ export const HpAdjustModal: React.FC<Props> = ({
   onApplyHpChange,
 }) => {
   const [amount, setAmount] = useState<string>('');
+  const [lastDeltaMessage, setLastDeltaMessage] = useState<{ text: string; isNegative: boolean } | null>(null);
 
   useEffect(() => {
     setAmount('');
-  }, [isOpen, combatant]);
+    setLastDeltaMessage(null);
+  }, [isOpen, combatant?.id]);
 
   if (!isOpen || !combatant) return null;
 
   const currentHp = combatant.hp.current;
   const maxHp = combatant.hp.max;
   const tempHp = combatant.hp.temp;
+  const hpPercent = Math.max(0, Math.min(100, Math.round((currentHp / maxHp) * 100)));
+
+  const getHpColor = () => {
+    if (currentHp <= 0) return 'bg-slate-600';
+    if (hpPercent <= 25) return 'bg-red-500';
+    if (hpPercent <= 50) return 'bg-amber-500';
+    return 'bg-emerald-500';
+  };
 
   const handleDamage = (mult: number = 1) => {
     const parsed = parseInt(amount, 10);
@@ -82,14 +92,32 @@ export const HpAdjustModal: React.FC<Props> = ({
 
   const handleQuickDelta = (delta: number) => {
     if (delta < 0) {
-      const dmg = Math.abs(delta);
-      const newHp = Math.max(0, currentHp - dmg);
-      const logMsg = `${combatant.name} получил ${dmg} урона. HP: ${newHp}/${maxHp}`;
-      onApplyHpChange(combatant.id, newHp, tempHp, logMsg);
+      let remainingDmg = Math.abs(delta);
+      let newTemp = tempHp;
+      let newHp = currentHp;
+
+      if (newTemp > 0) {
+        if (remainingDmg >= newTemp) {
+          remainingDmg -= newTemp;
+          newTemp = 0;
+        } else {
+          newTemp -= remainingDmg;
+          remainingDmg = 0;
+        }
+      }
+
+      newHp = Math.max(0, newHp - remainingDmg);
+      const logMsg = `${combatant.name} получил ${Math.abs(delta)} урона. HP: ${newHp}/${maxHp}`;
+      onApplyHpChange(combatant.id, newHp, newTemp, logMsg);
+
+      setLastDeltaMessage({ text: `-${Math.abs(delta)} HP`, isNegative: true });
     } else {
       const newHp = Math.min(maxHp, currentHp + delta);
-      const logMsg = `${combatant.name} восстановил ${delta} HP. HP: ${newHp}/${maxHp}`;
+      const actualHealed = newHp - currentHp;
+      const logMsg = `${combatant.name} восстановил ${actualHealed} HP. HP: ${newHp}/${maxHp}`;
       onApplyHpChange(combatant.id, newHp, tempHp, logMsg);
+
+      setLastDeltaMessage({ text: `+${actualHealed} HP`, isNegative: false });
     }
   };
 
@@ -97,23 +125,47 @@ export const HpAdjustModal: React.FC<Props> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
-          <div className="flex items-center gap-2">
-            <Heart className="w-5 h-5 text-rose-500" />
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-white font-rpg">{combatant.name}</h3>
-              <p className="text-xs text-slate-400">
-                Текущее HP: <span className="font-bold text-white">{currentHp}</span> / {maxHp}
-                {tempHp > 0 && <span className="text-cyan-400 ml-1">(+{tempHp} темп)</span>}
-              </p>
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-rose-500" />
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-white font-rpg">{combatant.name}</h3>
+                <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <span>HP:</span>
+                  <span className="font-bold text-white">{currentHp}</span>
+                  <span>/ {maxHp}</span>
+                  {tempHp > 0 && <span className="text-cyan-400 font-semibold">(+{tempHp} темп)</span>}
+                  {lastDeltaMessage && (
+                    <span
+                      key={Date.now()}
+                      className={`ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-bold animate-in fade-in zoom-in-75 duration-150 ${
+                        lastDeltaMessage.isNegative
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                      }`}
+                    >
+                      {lastDeltaMessage.text}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          {/* Visual Health Bar */}
+          <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+            <div
+              className={`h-full transition-all duration-300 ${getHpColor()}`}
+              style={{ width: `${hpPercent}%` }}
+            />
+          </div>
         </div>
 
         <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4">
@@ -137,6 +189,28 @@ export const HpAdjustModal: React.FC<Props> = ({
                 }
               }}
             />
+
+            {/* Quick preset chips to fill amount input */}
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <span className="text-[10px] text-slate-500 mr-0.5">Ввод:</span>
+              {[1, 5, 10, 15, 20].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setAmount(String(val))}
+                  className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-md text-xs font-semibold border border-slate-700/60 transition"
+                >
+                  {val}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setAmount(String(maxHp))}
+                className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 rounded-md text-xs font-semibold border border-slate-700/60 transition"
+              >
+                Max
+              </button>
+            </div>
           </div>
 
           {/* Core Action Buttons: Damage & Heal */}
@@ -185,27 +259,43 @@ export const HpAdjustModal: React.FC<Props> = ({
             </button>
           </div>
 
-          {/* Quick +/- buttons */}
+          {/* Quick +/- Delta buttons */}
           <div className="pt-2 border-t border-slate-800">
-            <span className="block text-[10px] text-slate-500 uppercase font-semibold text-center mb-1.5">
-              Быстрые изменения
-            </span>
-            <div className="grid grid-cols-4 gap-1.5">
-              {[-5, -1, 1, 5].map((delta) => (
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                Быстрые изменения (мгновенно)
+              </span>
+              <span className="text-[10px] text-slate-500">нажмите для применения</span>
+            </div>
+            <div className="grid grid-cols-6 gap-1.5">
+              {[-10, -5, -1, 1, 5, 10].map((delta) => (
                 <button
                   key={delta}
                   type="button"
                   onClick={() => handleQuickDelta(delta)}
-                  className={`py-1.5 rounded-lg text-xs font-bold transition border ${
+                  className={`py-2 rounded-xl text-xs font-bold transition border active:scale-90 ${
                     delta < 0
-                      ? 'border-red-900/60 bg-red-950/40 text-red-400 hover:bg-red-900/50'
-                      : 'border-emerald-900/60 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/50'
+                      ? 'border-red-900/60 bg-red-950/40 text-red-400 hover:bg-red-900/60 hover:text-red-300'
+                      : 'border-emerald-900/60 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/60 hover:text-emerald-300'
                   }`}
+                  title={`${delta < 0 ? 'Отнять' : 'Добавить'} ${Math.abs(delta)} HP`}
                 >
                   {delta > 0 ? `+${delta}` : delta}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Footer Action */}
+          <div className="pt-2 border-t border-slate-800 flex justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
+            >
+              <Check className="w-4 h-4 text-emerald-400" />
+              Готово / Закрыть
+            </button>
           </div>
         </div>
       </div>
