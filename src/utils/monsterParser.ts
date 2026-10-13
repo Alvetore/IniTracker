@@ -47,10 +47,25 @@ export function extractMonsterSlugAndId(input: string): {
     edition = '5e14';
   }
 
+  // Check if URL has query search parameter, e.g. ?search=... or ?q=...
+  let searchParam = '';
+  const searchMatch = trimmed.match(/[?&](?:search|q|name)=([^&#]+)/i);
+  if (searchMatch) {
+    try {
+      searchParam = decodeURIComponent(searchMatch[1]).trim();
+    } catch {
+      searchParam = searchMatch[1].trim();
+    }
+  }
+
   // Strip domain and path prefix
   let str = trimmed.replace(/^https?:\/\/[^/]+\/bestiary\/?/i, '');
   // Strip query params and trailing slashes
   str = str.replace(/[?#].*$/, '').replace(/\/+$/, '');
+
+  if (!str && searchParam) {
+    str = searchParam;
+  }
 
   // Match optional leading numeric ID, e.g. "21205-banshee", "40_banshee", "21205 banshee"
   const match = str.match(/^(?:(\d+)[-_ ])?(.+)$/);

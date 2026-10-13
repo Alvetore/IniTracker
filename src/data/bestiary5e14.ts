@@ -38,7 +38,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Скимитар: +4 к атаке, 1d6+2 рубящего урона.\nКороткий лук: +4 к атаке, 1d6+2 колющего урона.\nПроворный побег: бонусным действием Отход или Засада.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/127-goblin/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/4-goblin/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -82,7 +82,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Мультиатака: 2 атаки скимитаром (+4, 1d6+2).\nРеакция: Перенаправление атаки на соседнего гоблина.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/128-goblin_boss/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/182-goblin-boss/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -124,7 +124,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Тактика стаи: преимущество в атаке, если союзник рядом.\nКинжал: +4, 1d4+2. Праща: +4, 1d4+2.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/177-kobold/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/210-kobold/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -160,7 +160,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Уязвимость: дробящий урон. Иммунитет к яду и отравлению.\nКороткий меч / Короткий лук: +4 к атаке, 1d6+2 колющего урона.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/283-skeleton/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/24-skeleton/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -197,7 +197,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Стойкость нежити: спасбросок Тел (Сл 5 + урон) чтобы остаться с 1 HP вместо 0.\nУдар кулаком: +3, 1d6+1 дробящего.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/356-zombie/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/9-zombie/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -237,7 +237,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Агрессивный: бонусным действием рывок к врагу.\nСекира: +5 к попаданию, 1d12+3 рубящего урона.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/244-orc/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/20-orc/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -286,7 +286,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Мультиатака: 2 атаки секирой (+6, 1d12+4 + 1d8 рубящего).\nБоевой клич (1/день): союзники в 30 фт. получают преимущество к атакам.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/245-orc_war_chief/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/258-orc-war-chief/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -326,7 +326,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Утренняя звезда: +4 к атаке, 2d8+2 урона.\nВнезапная атака: +2d6 урона из засады/врасплох.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/46-bugbear/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/13-bugbear/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -365,7 +365,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Воинское преимущество: +2d6 урона, если союзник стоит рядом с целью.\nДлинный меч: +3, 1d8+1 рубящего.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/153-hobgoblin/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/27-hobgoblin/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -399,7 +399,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Когти: +4 к атаке, 2d4+2 урона. Спасбросок Тел Сл 10 или паралич на 1 минуту.\nИммунитет к яду, очарованию.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/120-ghoul/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/166-ghoul/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -432,7 +432,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Большая дубина: +6 к атаке, 2d8+4 дробящего урона.\nСкорость 40 фт., сильный и выносливый крушитель.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/241-ogre/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/19-ogre/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -475,7 +475,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Мультиатака: Клюв (+7, 1d10+5) и Когти (+7, 2d8+5).\nПреимущество на Восприятие по нюху и зрению.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/246-owlbear/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/25-owlbear/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -519,7 +519,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Регенерация: восстанавливает 10 HP каждый ход, если не был атакован огнем или кислотой!\nМультиатака: 1 укус (+7, 1d6+4) и 2 когтями (+7, 2d6+4).',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/318-troll/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/304-troll/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -552,7 +552,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Скимитар: +3, 1d6+1 рубящего урона.\nЛегкий арбалет: +3, 1d8+1 колющего урона.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/28-bandit/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/437-bandit/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -597,7 +597,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Мультиатака: 2 скимитара (+5, 1d6+3) + 1 кинжал (+5, 1d4+3).\nПарирование: +2 к КД реакцией.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/29-bandit_captain/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/438-bandit_captain/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -627,7 +627,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Копье: +3 к попаданию, 1d6+1 колющего урона.\nКД 16 (кольчужная рубаха + щит).',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/137-guard/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/442-guard/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -677,7 +677,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Мультиатака: 2 атаки двуручным мечом (+5, 2d6+3).\nКомандование: союзники добавляют 1d4 к атакам/спасам.\nПарирование: +2 к КД реакцией.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/176-knight/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/440-knight/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -716,7 +716,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Тактика стаи: преимущество к атаке.\nУкус: +5 к атаке, 2d6+3 колющего. Спасбросок Силы Сл 13 или цель сбита с ног.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/87-dire_wolf/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/297-dire-wolf/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -755,7 +755,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Укус: +5 к попаданию, 1d8+3 колющего + 2d8 яда (спас Тел Сл 11).\nПаутина: опутывает цель на дистанции 30/60 фт.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/124-giant_spider/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/3-giant-spider/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -799,7 +799,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Мультиатака: 1 укус (+10, 2d10+6 + 1d6 огня) и 2 когтями (+10, 2d6+6).\nОгненное дыхание (5-6): конус 30 фт, 16d6 огня (спасбросок Лов Сл 17).\nИммунитет к огню.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/355-young_red_dragon/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/109-young-red-dragon/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -841,7 +841,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Антимагический конус 150 фт. подавляет заклинания и магию!\n3 луча из глаз каждый ход (Сл 16) + 3 легендарных действия лучами.\nУкус: +5, 4d6 колющего урона.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/34-beholder/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/43-beholder/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -886,7 +886,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Притворяется предметом. Клейкое тело: схватывает цель при ударе.\nЛожноножка: +5, 1d8+3. Укус: +5, 1d8+3 колющего + 1d8 кислоты.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/218-mimic/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/114-mimic/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -924,7 +924,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Прозрачный куб (Сл 15 заметить).\nПоглощение: поглощает цель внутрь себя (3d6 кислоты каждый раунд, паралич).',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/119-gelatinous_cube/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/256-gelatinous-cube/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -959,7 +959,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Заклинания (Сл 14, +6 к атаке):\n• Огненный шар (8d6 огня)\n• Конус холода (8d8 холода)\n• Щит (+5 КД реакцией), Туманный шаг (бонусное действие телепорт 30 фт.)\n• Высшая невидимость.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/201-mage/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/434-mage/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -995,7 +995,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Темная преданность: преимущество от очарования и испуга.\nСкимитар: +3, 1d6+1 рубящего урона.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/75-cultist/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/12-cultist/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -1029,7 +1029,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Заклинания (Сл 13, +5 к атаке):\n• Стражи душ (3d8 урона аурой в 15 фт.)\n• Направляющий снаряд (4d6 лучистого + преимущество следующей атаке)\n• Духовное оружие (1d8+3 бонусом)\n• Лечащее слово (1d4+3 бонусом).',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/258-priest/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/441-priest/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
