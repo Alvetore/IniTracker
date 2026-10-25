@@ -19,6 +19,7 @@ import { ThemePickerModal } from './components/common/ThemePickerModal';
 import { AddToCombatOptions } from './components/combat/AddToCombatModal';
 import { CatalogMonster } from './types/bestiary';
 import { convertCatalogMonsterToTemplate } from './utils/monsterParser';
+import { sortCombatantsPreservingTurn } from './utils/combatUtils';
 import { THEMES, ThemeId } from './types/theme';
 
 export const App: React.FC = () => {
@@ -267,11 +268,11 @@ export const App: React.FC = () => {
       }
     });
 
-    const updatedCombatants = [...combatState.combatants, ...newCombatants];
-    // Re-sort if combat is already active so reinforcements fall in correct initiative place
-    if (combatState.isActive) {
-      updatedCombatants.sort((a, b) => b.initiative - a.initiative);
-    }
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      [...combatState.combatants, ...newCombatants],
+      combatState.currentTurnIndex,
+      combatState.isActive
+    );
 
     const newLog = [
       {
@@ -286,7 +287,8 @@ export const App: React.FC = () => {
 
     handleUpdateCombatState({
       ...combatState,
-      combatants: updatedCombatants,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
       log: newLog,
     });
     setActiveTab('combat');
@@ -325,10 +327,11 @@ export const App: React.FC = () => {
       sourcePartyMemberId: hero.id,
     };
 
-    let updatedCombatants = [...state.combatants, newCombatant];
-    if (state.isActive) {
-      updatedCombatants.sort((a, b) => b.initiative - a.initiative);
-    }
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      [...state.combatants, newCombatant],
+      state.currentTurnIndex,
+      state.isActive
+    );
 
     const newLog = [
       {
@@ -343,7 +346,8 @@ export const App: React.FC = () => {
 
     handleUpdateCombatState({
       ...state,
-      combatants: updatedCombatants,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
       log: newLog,
     });
     setActiveTab('combat');
@@ -417,10 +421,11 @@ export const App: React.FC = () => {
       });
     }
 
-    let updatedCombatants = [...state.combatants, ...newCombatants];
-    if (state.isActive) {
-      updatedCombatants.sort((a, b) => b.initiative - a.initiative);
-    }
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      [...state.combatants, ...newCombatants],
+      state.currentTurnIndex,
+      state.isActive
+    );
 
     const modeText =
       options.initiativeMode === 'manual'
@@ -440,7 +445,8 @@ export const App: React.FC = () => {
 
     handleUpdateCombatState({
       ...state,
-      combatants: updatedCombatants,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
       log: newLog,
     });
 

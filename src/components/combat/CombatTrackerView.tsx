@@ -10,10 +10,12 @@ import {
   DiceSystem,
 } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
+import { sortCombatantsPreservingTurn } from '../../utils/combatUtils';
 import { ConditionPickerModal } from './ConditionPickerModal';
 import { HpAdjustModal } from './HpAdjustModal';
 import { AddCombatantModal } from './AddCombatantModal';
 import { PartySelectionModal } from './PartySelectionModal';
+import { EditCombatantModal } from './EditCombatantModal';
 import {
   Play,
   RotateCcw,
@@ -37,6 +39,8 @@ import {
   Flame,
   Layers,
   FileText,
+  Pencil,
+  ArrowUpDown,
 } from 'lucide-react';
 
 interface Props {
@@ -60,6 +64,11 @@ export const CombatTrackerView: React.FC<Props> = ({
   const [isAddCombatantOpen, setIsAddCombatantOpen] = useState(false);
   const [isLoadEncounterOpen, setIsLoadEncounterOpen] = useState(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
+  const [editingCombatant, setEditingCombatant] = useState<Combatant | null>(null);
+
+  // Inline initiative edit state
+  const [inlineEditInitId, setInlineEditInitId] = useState<string | null>(null);
+  const [inlineEditInitVal, setInlineEditInitVal] = useState<number>(0);
 
   // View preferences
   const [showDefeated, setShowDefeated] = useState(true);
@@ -143,10 +152,11 @@ export const CombatTrackerView: React.FC<Props> = ({
 
     if (newCombatants.length === 0) return;
 
-    let updatedCombatants = [...state.combatants, ...newCombatants];
-    if (state.isActive) {
-      updatedCombatants.sort((a, b) => b.initiative - a.initiative);
-    }
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      [...state.combatants, ...newCombatants],
+      state.currentTurnIndex,
+      state.isActive
+    );
 
     const heroNames = membersToAdd.map((m) => m.name).join(', ');
     const newLog = [
@@ -165,7 +175,8 @@ export const CombatTrackerView: React.FC<Props> = ({
 
     onUpdateCombatState({
       ...state,
-      combatants: updatedCombatants,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
       log: newLog,
     });
   };
@@ -201,6 +212,12 @@ export const CombatTrackerView: React.FC<Props> = ({
       }
     });
 
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      [...state.combatants, ...newCombatants],
+      state.currentTurnIndex,
+      state.isActive
+    );
+
     const newLog = [
       {
         id: String(Date.now()),
@@ -216,7 +233,8 @@ export const CombatTrackerView: React.FC<Props> = ({
       ...state,
       encounterTitle: enc.title,
       encounterId: enc.id,
-      combatants: [...state.combatants, ...newCombatants],
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
       log: newLog,
     });
     setIsLoadEncounterOpen(false);
@@ -233,9 +251,16 @@ export const CombatTrackerView: React.FC<Props> = ({
       return c;
     });
 
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      updated,
+      combatState.currentTurnIndex,
+      combatState.isActive
+    );
+
     onUpdateCombatState({
       ...combatState,
-      combatants: updated,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
     });
   };
 
@@ -247,9 +272,16 @@ export const CombatTrackerView: React.FC<Props> = ({
       return { ...c, initiative: total };
     });
 
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      updated,
+      combatState.currentTurnIndex,
+      combatState.isActive
+    );
+
     onUpdateCombatState({
       ...combatState,
-      combatants: updated,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
     });
   };
 
@@ -257,20 +289,14 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handleStartCombat = () => {
     if (!combatState || combatState.combatants.length === 0) return;
 
-    const sorted = [...combatState.combatants].sort((a, b) => {
-      if (b.initiative !== a.initiative) {
-        return b.initiative - a.initiative;
-      }
-      // Tie breaker: higher initiative modifier
-      return b.initiativeModifier - a.initiativeModifier;
-    });
+    const { sortedCombatants } = sortCombatantsPreservingTurn(combatState.combatants, 0, false);
 
     const newLog = [
       {
         id: String(Date.now()),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         round: 1,
-        message: `Бой начался! Раунд 1. Первый ходит: ${sorted[0].name} (инициатива ${sorted[0].initiative})`,
+        message: `Бой начался! Раунд 1. Первый ходит: ${sortedCombatants[0].name} (инициатива ${sortedCombatants[0].initiative})`,
         type: 'round' as const,
       },
       ...combatState.log,
@@ -281,8 +307,70 @@ export const CombatTrackerView: React.FC<Props> = ({
       isActive: true,
       round: 1,
       currentTurnIndex: 0,
-      combatants: sorted,
+      combatants: sortedCombatants,
       log: newLog,
+    });
+  };
+
+  // Re-sort combatants by initiative descending, preserving active turn
+  const handleSortByInitiative = () => {
+    if (!combatState || combatState.combatants.length === 0) return;
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      combatState.combatants,
+      combatState.currentTurnIndex,
+      combatState.isActive
+    );
+
+    const activeName = sortedCombatants[nextTurnIndex]?.name;
+    const newLog =
+      combatState.isActive && activeName
+        ? [
+            {
+              id: String(Date.now()),
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              round: combatState.round,
+              message: `Порядок инициативы пересортирован. Текущий ход: ${activeName}`,
+              type: 'system' as const,
+            },
+            ...combatState.log,
+          ]
+        : combatState.log;
+
+    onUpdateCombatState({
+      ...combatState,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
+      log: newLog,
+    });
+  };
+
+  const handleSaveCombatantEdit = (id: string, updates: Partial<Combatant>) => {
+    if (!combatState) return;
+    const oldC = combatState.combatants.find((c) => c.id === id);
+    const updated = combatState.combatants.map((c) => (c.id === id ? { ...c, ...updates } : c));
+
+    const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+      updated,
+      combatState.currentTurnIndex,
+      combatState.isActive
+    );
+
+    const logEntries = [...combatState.log];
+    if (oldC && updates.initiative !== undefined && oldC.initiative !== updates.initiative) {
+      logEntries.unshift({
+        id: String(Date.now()),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        round: combatState.round,
+        message: `Инициатива "${updates.name || oldC.name}" изменена: ${oldC.initiative} ➔ ${updates.initiative}. Порядок пересортирован.`,
+        type: 'system',
+      });
+    }
+
+    onUpdateCombatState({
+      ...combatState,
+      combatants: sortedCombatants,
+      currentTurnIndex: nextTurnIndex,
+      log: logEntries,
     });
   };
 
@@ -394,10 +482,27 @@ export const CombatTrackerView: React.FC<Props> = ({
   };
 
   // Update specific combatant
-  const handleUpdateCombatant = (id: string, updates: Partial<Combatant>) => {
+  const handleUpdateCombatant = (
+    id: string,
+    updates: Partial<Combatant>,
+    autoSort: boolean = false
+  ) => {
     if (!combatState) return;
     const updated = combatState.combatants.map((c) => (c.id === id ? { ...c, ...updates } : c));
-    onUpdateCombatState({ ...combatState, combatants: updated });
+    if (autoSort || ('initiative' in updates && combatState.isActive)) {
+      const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+        updated,
+        combatState.currentTurnIndex,
+        combatState.isActive
+      );
+      onUpdateCombatState({
+        ...combatState,
+        combatants: sortedCombatants,
+        currentTurnIndex: nextTurnIndex,
+      });
+    } else {
+      onUpdateCombatState({ ...combatState, combatants: updated });
+    }
   };
 
   // Remove combatant
@@ -726,6 +831,14 @@ export const CombatTrackerView: React.FC<Props> = ({
                 >
                   <Dices className="w-3.5 h-3.5" /> Бросить ВСЕМ
                 </button>
+
+                <button
+                  onClick={handleSortByInitiative}
+                  className="col-span-2 sm:col-span-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                  title="Упорядочить список по убыванию инициативы"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" /> Сортировать
+                </button>
               </div>
             </div>
           </div>
@@ -763,8 +876,14 @@ export const CombatTrackerView: React.FC<Props> = ({
                       type="number"
                       value={c.initiative}
                       onChange={(e) =>
-                        handleUpdateCombatant(c.id, { initiative: parseInt(e.target.value) || 0 })
+                        handleUpdateCombatant(c.id, { initiative: parseInt(e.target.value) || 0 }, false)
                       }
+                      onBlur={() => handleSortByInitiative()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
                       className="w-10 sm:w-12 bg-transparent text-center font-bold text-white text-sm focus:outline-none focus:text-amber-400"
                     />
                   </div>
@@ -869,6 +988,15 @@ export const CombatTrackerView: React.FC<Props> = ({
               </button>
 
               <button
+                onClick={handleSortByInitiative}
+                className="py-1.5 px-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                title="Пересортировать всех участников по инициативе (текущий ход сохранится)"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Сортировать</span>
+              </button>
+
+              <button
                 onClick={handleResetCombat}
                 title="Сбросить бой к фазе подготовки"
                 className="p-1.5 sm:p-2 text-slate-400 hover:text-amber-400 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition"
@@ -928,15 +1056,43 @@ export const CombatTrackerView: React.FC<Props> = ({
                         >
                           <ChevronUp className="w-3.5 h-3.5" />
                         </button>
-                        <div
-                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm shadow ${
-                            isActive
-                              ? 'bg-amber-500 text-slate-950 font-black'
-                              : 'bg-slate-950 border border-slate-800 text-slate-200'
-                          }`}
-                        >
-                          {combatant.initiative}
-                        </div>
+                        {inlineEditInitId === combatant.id ? (
+                          <input
+                            type="number"
+                            autoFocus
+                            value={inlineEditInitVal}
+                            onChange={(e) => setInlineEditInitVal(parseInt(e.target.value) || 0)}
+                            onBlur={() => {
+                              handleSaveCombatantEdit(combatant.id, { initiative: inlineEditInitVal });
+                              setInlineEditInitId(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleSaveCombatantEdit(combatant.id, { initiative: inlineEditInitVal });
+                                setInlineEditInitId(null);
+                              } else if (e.key === 'Escape') {
+                                setInlineEditInitId(null);
+                              }
+                            }}
+                            className="w-9 h-8 sm:w-10 sm:h-9 bg-slate-900 border border-amber-500 rounded-xl text-center font-bold text-xs sm:text-sm text-white focus:outline-none shadow"
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInlineEditInitId(combatant.id);
+                              setInlineEditInitVal(combatant.initiative);
+                            }}
+                            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm shadow transition hover:scale-105 ${
+                              isActive
+                                ? 'bg-amber-500 text-slate-950 font-black'
+                                : 'bg-slate-950 border border-slate-800 text-slate-200 hover:border-amber-500/50'
+                            }`}
+                            title="Нажмите, чтобы быстро изменить инициативу (текущий ход сохранится)"
+                          >
+                            {combatant.initiative}
+                          </button>
+                        )}
                         <button
                           onClick={() => handleMoveOrder(index, 'down')}
                           disabled={index === combatants.length - 1}
@@ -1149,6 +1305,14 @@ export const CombatTrackerView: React.FC<Props> = ({
                         )}
 
                         <button
+                          onClick={() => setEditingCombatant(combatant)}
+                          className="p-2 text-slate-500 hover:text-amber-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
+                          title="Редактировать участника (имя, инициатива, HP, КД, заметки)"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+
+                        <button
                           onClick={() => handleRemoveCombatant(combatant.id)}
                           className="p-2 text-slate-500 hover:text-red-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
                           title="Удалить из боя"
@@ -1257,11 +1421,29 @@ export const CombatTrackerView: React.FC<Props> = ({
         diceSystem={combatState?.diceSystem || 'd20'}
         onAddCombatants={(newOnes) => {
           const state = ensureCombatState();
+          const { sortedCombatants, nextTurnIndex } = sortCombatantsPreservingTurn(
+            [...state.combatants, ...newOnes],
+            state.currentTurnIndex,
+            state.isActive
+          );
           onUpdateCombatState({
             ...state,
-            combatants: [...state.combatants, ...newOnes],
+            combatants: sortedCombatants,
+            currentTurnIndex: nextTurnIndex,
           });
         }}
+      />
+
+      <EditCombatantModal
+        isOpen={editingCombatant !== null}
+        onClose={() => setEditingCombatant(null)}
+        combatant={
+          editingCombatant
+            ? combatState?.combatants.find((c) => c.id === editingCombatant.id) || editingCombatant
+            : null
+        }
+        diceSystem={combatState?.diceSystem || 'd20'}
+        onSave={handleSaveCombatantEdit}
       />
 
       <PartySelectionModal
