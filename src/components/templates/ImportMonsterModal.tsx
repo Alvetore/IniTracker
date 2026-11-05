@@ -45,6 +45,8 @@ export const ImportMonsterModal: React.FC<Props> = ({
 
   if (!isOpen) return null;
 
+  const safeInputUrl = /^https?:\/\//i.test(inputUrl.trim()) ? inputUrl.trim() : undefined;
+
   const handleEditionChange = (nextEdition: '5e14' | '5e24') => {
     setEdition(nextEdition);
     setPreviewTemplate(null);
@@ -72,14 +74,22 @@ export const ImportMonsterModal: React.FC<Props> = ({
     }
 
     // 1. Try finding in bundled catalogs or known monster database
-    const foundInCatalog = findMonsterByUrlOrSlug(trimmed, activeEdition);
-    if (foundInCatalog) {
-      const tpl = convertCatalogMonsterToTemplate(foundInCatalog);
+    const lookup = findMonsterByUrlOrSlug(trimmed, activeEdition);
+    if (lookup) {
+      const tpl = convertCatalogMonsterToTemplate(lookup.monster);
+      if (lookup.source === 'dictionary') {
+        tpl.tags = [...tpl.tags, 'Словарь'];
+        setStatusMessage({
+          text: `«${lookup.monster.name}» найден в словаре, а не в полном каталоге. Характеристики приблизительные — проверьте их перед сохранением.`,
+          type: 'info',
+        });
+      } else {
+        setStatusMessage({
+          text: `Существо «${lookup.monster.name}» успешно распознано (${lookup.monster.sourceLabel})!`,
+          type: 'success',
+        });
+      }
       setPreviewTemplate(tpl);
-      setStatusMessage({
-        text: `Существо «${foundInCatalog.name}» успешно распознано (${foundInCatalog.sourceLabel})!`,
-        type: 'success',
-      });
       return;
     }
 
@@ -107,7 +117,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
 
     setPreviewTemplate(tpl);
     setStatusMessage({
-      text: `Имя «${rawName}» извлечено из ссылки. Проверьте характеристики ниже перед сохранением или вставьте текст статблока для полного автозаполнения.`,
+      text: `В каталоге монстр не найден. Создан черновик «${rawName}» с пустыми характеристиками. Откройте страницу и вставьте текст статблока во вкладке «Вставить текст» для точного импорта.`,
       type: 'info',
     });
   };
@@ -288,8 +298,20 @@ export const ImportMonsterModal: React.FC<Props> = ({
                 </button>
               </div>
               <p className="text-[11px] text-slate-500">
-                Поддерживаются прямые ссылки на существ как с next.dnd.su, так и с 5e14.dnd.su (например, https://next.dnd.su/bestiary/21205-banshee/).
+                По ссылке монстр ищется во встроенном каталоге и словаре. Если его там нет, будет создан черновик:
+                страница не скачивается браузером из-за CORS. Для точного импорта откройте страницу и вставьте
+                текст статблока во вкладке «Вставить текст».
               </p>
+              {safeInputUrl && (
+                <a
+                  href={safeInputUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition"
+                >
+                  Открыть страницу на dnd.su ↗
+                </a>
+              )}
             </div>
           ) : (
             <div className="space-y-2">

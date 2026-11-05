@@ -17,6 +17,11 @@ export interface ParsedMonsterResult {
   sourceLabel?: string;
 }
 
+export interface MonsterLookupResult {
+  monster: CatalogMonster;
+  source: 'catalog' | 'dictionary';
+}
+
 /**
  * Normalizes URL for consistent comparisons
  */
@@ -91,7 +96,7 @@ export function extractMonsterSlugAndId(input: string): {
 export function findMonsterByUrlOrSlug(
   urlOrSlug: string,
   preferredEdition?: '5e14' | '5e24'
-): CatalogMonster | null {
+): MonsterLookupResult | null {
   const { id, slug, edition: detectedEdition } = extractMonsterSlugAndId(urlOrSlug);
   const targetEdition = detectedEdition || preferredEdition;
 
@@ -104,7 +109,7 @@ export function findMonsterByUrlOrSlug(
 
   // 1. Exact normalized URL match
   const byExactUrl = allMonsters.find((m) => normalizeUrl(m.sourceUrl) === normInput);
-  if (byExactUrl) return byExactUrl;
+  if (byExactUrl) return { monster: byExactUrl, source: 'catalog' };
 
   // 2. Match by numeric ID in URL (e.g. 21205-banshee, 40-banshee)
   if (id) {
@@ -112,10 +117,11 @@ export function findMonsterByUrlOrSlug(
       const norm = normalizeUrl(m.sourceUrl);
       return norm.includes(`/${id}-`) || norm.includes(`/${id}/`) || norm.endsWith(`/${id}`);
     });
-    if (byIdUrl) return byIdUrl;
+    if (byIdUrl) return { monster: byIdUrl, source: 'catalog' };
   }
 
-  // 3. Match by clean slug
+  // 3. Match by clean slug. Only exact matches are safe: partial matching
+  // used to turn unknown links like "9999-goblin-something" into a goblin.
   const cleanSlug = slug.toLowerCase();
   const cleanSlugWords = cleanSlug.replace(/[-_]+/g, ' ').toLowerCase();
 
@@ -132,22 +138,9 @@ export function findMonsterByUrlOrSlug(
       m.id.toLowerCase().replace(/^(5e14-|5e24-)/, '') === cleanSlug
     );
   });
-  if (bySlug) return bySlug;
+  if (bySlug) return { monster: bySlug, source: 'catalog' };
 
-  // 4. Partial slug match in catalog
-  if (cleanSlug.length >= 3) {
-    const byPartial = allMonsters.find(
-      (m) =>
-        m.englishName.toLowerCase().includes(cleanSlugWords) ||
-        cleanSlugWords.includes(m.englishName.toLowerCase()) ||
-        m.name.toLowerCase().includes(cleanSlugWords) ||
-        cleanSlugWords.includes(m.name.toLowerCase())
-    );
-    if (byPartial) return byPartial;
-  }
-
-  // 5. Check KNOWN_MONSTER_DICTIONARY
-  // Normalize lookup key
+  // 4. Check KNOWN_MONSTER_DICTIONARY (approximate fallback, not a page scrape)
   const dictKey = cleanSlug.replace(/^\d+[-_]/, '');
   const dictEntry =
     KNOWN_MONSTER_DICTIONARY[dictKey] ||
@@ -161,30 +154,33 @@ export function findMonsterByUrlOrSlug(
   if (dictEntry) {
     const edition = targetEdition || '5e24';
     return {
-      id: `${edition}-${dictKey}`,
-      name: dictEntry.name,
-      englishName: dictEntry.englishName,
-      edition,
-      cr: dictEntry.cr,
-      crNum: parseChallengeRating(dictEntry.cr),
-      size: dictEntry.size || 'Средний',
-      category: dictEntry.category || 'Монстр',
-      alignment: 'Любое мировоззрение',
-      maxHp: dictEntry.maxHp,
-      hpFormula: '',
-      armorClass: dictEntry.armorClass,
-      speed: '30 фт.',
-      initiativeModifier: dictEntry.initiativeModifier,
-      stats: { str: 10, dex: 10 + dictEntry.initiativeModifier * 2, con: 10, int: 10, wis: 10, cha: 10 },
-      senses: 'пассивное Восприятие 10',
-      actions: [],
-      notes: dictEntry.notes || `Существо ${dictEntry.name} [${dictEntry.englishName}].`,
-      sourceUrl: urlOrSlug.startsWith('http')
-        ? urlOrSlug
-        : edition === '5e24'
-        ? `https://next.dnd.su/bestiary/${slug}/`
-        : `https://5e14.dnd.su/bestiary/${slug}/`,
-      sourceLabel: edition === '5e24' ? 'next.dnd.su (5e24)' : '5e14.dnd.su (5e14)',
+      source: 'dictionary',
+      monster: {
+        id: `${edition}-${dictKey}`,
+        name: dictEntry.name,
+        englishName: dictEntry.englishName,
+        edition,
+        cr: dictEntry.cr,
+        crNum: parseChallengeRating(dictEntry.cr),
+        size: dictEntry.size || 'Средний',
+        category: dictEntry.category || 'Монстр',
+        alignment: 'Любое мировоззрение',
+        maxHp: dictEntry.maxHp,
+        hpFormula: '',
+        armorClass: dictEntry.armorClass,
+        speed: '30 фт.',
+        initiativeModifier: dictEntry.initiativeModifier,
+        stats: { str: 10, dex: 10 + dictEntry.initiativeModifier * 2, con: 10, int: 10, wis: 10, cha: 10 },
+        senses: 'пассивное Восприятие 10',
+        actions: [],
+        notes: dictEntry.notes || `Существо ${dictEntry.name} [${dictEntry.englishName}].`,
+        sourceUrl: urlOrSlug.startsWith('http')
+          ? urlOrSlug
+          : edition === '5e24'
+          ? `https://next.dnd.su/bestiary/${slug}/`
+          : `https://5e14.dnd.su/bestiary/${slug}/`,
+        sourceLabel: edition === '5e24' ? 'next.dnd.su (5e24) • словарь' : '5e14.dnd.su (5e14) • словарь',
+      },
     };
   }
 
