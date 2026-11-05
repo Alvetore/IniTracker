@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import {
   CreatureTemplate,
   PartyMember,
@@ -9,18 +9,31 @@ import {
 import { Storage } from './utils/storage';
 import { rollInitiativeForSystem } from './utils/dice';
 import { Header, ActiveTab } from './components/common/Header';
-import { TemplatesView } from './components/templates/TemplatesView';
-import { PartyView } from './components/party/PartyView';
-import { EncountersView } from './components/encounters/EncountersView';
-import { CombatTrackerView } from './components/combat/CombatTrackerView';
 import { DiceRollerModal } from './components/common/DiceRollerModal';
 import { DataManagementModal } from './components/common/DataManagementModal';
 import { ThemePickerModal } from './components/common/ThemePickerModal';
 import { AddToCombatOptions } from './components/combat/AddToCombatModal';
 import { CatalogMonster } from './types/bestiary';
-import { convertCatalogMonsterToTemplate } from './utils/monsterParser';
+import { convertCatalogMonsterToTemplate } from './utils/catalogToTemplate';
 import { sortCombatantsPreservingTurn } from './utils/combatUtils';
 import { THEMES, ThemeId } from './types/theme';
+
+const TemplatesView = lazy(() =>
+  import('./components/templates/TemplatesView').then((module) => ({ default: module.TemplatesView }))
+);
+const PartyView = lazy(() =>
+  import('./components/party/PartyView').then((module) => ({ default: module.PartyView }))
+);
+const EncountersView = lazy(() =>
+  import('./components/encounters/EncountersView').then((module) => ({
+    default: module.EncountersView,
+  }))
+);
+const CombatTrackerView = lazy(() =>
+  import('./components/combat/CombatTrackerView').then((module) => ({
+    default: module.CombatTrackerView,
+  }))
+);
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('combat');
@@ -82,8 +95,39 @@ export const App: React.FC = () => {
   };
 
   const handleUpdateCombatState = (newState: ActiveCombatState | null) => {
-    setCombatState(newState);
-    Storage.saveCombatState(newState);
+    // Keep the journal bounded: every HP click rewrites the whole combat state to localStorage.
+    const normalizedState = newState
+      ? { ...newState, log: newState.log.slice(0, 200) }
+      : null;
+    setCombatState(normalizedState);
+    Storage.saveCombatState(normalizedState);
+
+    // A party member's card follows the HP of its single combatant instance.
+    // Copies are ambiguous, so they are left untouched.
+    if (normalizedState) {
+      const byPartyMember = new Map<string, Combatant[]>();
+      normalizedState.combatants.forEach((combatant) => {
+        if (!combatant.sourcePartyMemberId) return;
+        const list = byPartyMember.get(combatant.sourcePartyMemberId) ?? [];
+        list.push(combatant);
+        byPartyMember.set(combatant.sourcePartyMemberId, list);
+      });
+
+      setParty((currentParty) => {
+        let changed = false;
+        const updatedParty = currentParty.map((member) => {
+          const instances = byPartyMember.get(member.id);
+          if (!instances || instances.length !== 1) return member;
+          const nextHp = Math.min(member.maxHp, Math.max(0, instances[0].hp.current));
+          if (member.currentHp === nextHp) return member;
+          changed = true;
+          return { ...member, currentHp: nextHp };
+        });
+        if (!changed) return currentParty;
+        Storage.saveParty(updatedParty);
+        return updatedParty;
+      });
+    }
   };
 
   // --- Templates Actions ---
@@ -107,6 +151,7 @@ export const App: React.FC = () => {
       ...tpl,
       id: `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: `${tpl.name} (Копия)`,
+      tags: [...tpl.tags],
       createdAt: Date.now(),
     };
     handleSaveTemplates([duplicated, ...templates]);
@@ -131,6 +176,42 @@ export const App: React.FC = () => {
   const handleHealAllParty = () => {
     const healed = party.map((p) => ({ ...p, currentHp: p.maxHp }));
     handleSaveParty(healed);
+
+    if (!combatState) return;
+
+    const healedById = new Map(healed.map((member) => [member.id, member]));
+    let changed = false;
+    const updatedCombatants = combatState.combatants.map((combatant) => {
+      if (!combatant.sourcePartyMemberId) return combatant;
+      const member = healedById.get(combatant.sourcePartyMemberId);
+      if (!member) return combatant;
+      if (combatant.hp.current === member.maxHp && combatant.hp.temp === 0 && !combatant.isDefeated) {
+        return combatant;
+      }
+      changed = true;
+      return {
+        ...combatant,
+        hp: { ...combatant.hp, current: member.maxHp, temp: 0 },
+        isDefeated: false,
+      };
+    });
+
+    if (!changed) return;
+
+    handleUpdateCombatState({
+      ...combatState,
+      combatants: updatedCombatants,
+      log: [
+        {
+          id: `heal-all-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          round: combatState.round,
+          message: 'Долгий отдых: партия восстановила здоровье',
+          type: 'heal',
+        },
+        ...combatState.log,
+      ],
+    });
   };
 
   // --- Encounters Actions ---
@@ -154,6 +235,8 @@ export const App: React.FC = () => {
       ...enc,
       id: `enc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: `${enc.title} (Копия)`,
+      tags: [...enc.tags],
+      monsters: enc.monsters.map((monster) => ({ ...monster })),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -162,6 +245,13 @@ export const App: React.FC = () => {
 
   // Launch Encounter: adds Party + Monsters from encounter, switches to Combat tab
   const handleStartCombatFromEncounter = (enc: Encounter) => {
+    if (combatState && combatState.combatants.length > 0) {
+      const warning = combatState.isActive
+        ? 'Сейчас идёт активный бой. Запуск нового энкаунтера заменит текущий бой (HP, статусы и журнал будут потеряны). Продолжить?'
+        : 'В подготовке уже есть участники. Запуск энкаунтера заменит их. Продолжить?';
+      if (!window.confirm(warning)) return;
+    }
+
     const combatants: Combatant[] = [];
     const diceSystem = combatState?.diceSystem || 'd20';
 
@@ -369,24 +459,33 @@ export const App: React.FC = () => {
         ? convertCatalogMonsterToTemplate(options.creature as CatalogMonster)
         : (options.creature as CreatureTemplate);
 
-    const count = Math.max(1, options.count);
+    const count = Math.min(50, Math.max(1, options.count));
     const newCombatants: Combatant[] = [];
-    const existingCount = state.combatants.filter((c) =>
-      c.name.toLowerCase().startsWith(tpl.name.toLowerCase())
-    ).length;
+    const baseName = tpl.name.trim();
+    const escapedBaseName = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const existingNamePattern = new RegExp(`^${escapedBaseName}(?:\\s+(\\d+))?$`, 'i');
+    let maxExistingNumber = 0;
+    state.combatants.forEach((combatant) => {
+      const match = combatant.name.trim().match(existingNamePattern);
+      if (!match) return;
+      const number = match[1] ? parseInt(match[1], 10) : 1;
+      if (Number.isFinite(number)) maxExistingNumber = Math.max(maxExistingNumber, number);
+    });
 
     // Calculate group roll in advance if in auto mode
-    let groupRollVal = 0;
+    let groupRollVal: number;
     if (options.initiativeMode === 'manual') {
       groupRollVal = options.manualInitiative;
+    } else if (typeof options.previewInitiative === 'number') {
+      groupRollVal = options.previewInitiative;
     } else {
       const { total } = rollInitiativeForSystem(diceSystem, tpl.initiativeModifier);
       groupRollVal = total;
     }
 
     for (let i = 1; i <= count; i++) {
-      const num = existingCount + i;
-      const name = existingCount > 0 || count > 1 ? `${tpl.name} ${num}` : tpl.name;
+      const num = maxExistingNumber + i;
+      const name = maxExistingNumber > 0 || count > 1 ? `${baseName} ${num}` : baseName;
 
       let initVal: number;
       if (options.initiativeMode === 'manual') {
@@ -487,52 +586,60 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {activeTab === 'combat' && (
-          <CombatTrackerView
-            combatState={combatState}
-            onUpdateCombatState={handleUpdateCombatState}
-            party={party}
-            templates={templates}
-            encounters={encounters}
-          />
-        )}
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-20 text-sm text-slate-400">
+              Загрузка раздела…
+            </div>
+          }
+        >
+          {activeTab === 'combat' && (
+            <CombatTrackerView
+              combatState={combatState}
+              onUpdateCombatState={handleUpdateCombatState}
+              party={party}
+              templates={templates}
+              encounters={encounters}
+            />
+          )}
 
-        {activeTab === 'encounters' && (
-          <EncountersView
-            encounters={encounters}
-            templates={templates}
-            isCombatActive={combatState?.isActive || false}
-            onSaveEncounter={handleSaveSingleEncounter}
-            onDeleteEncounter={handleDeleteEncounter}
-            onDuplicateEncounter={handleDuplicateEncounter}
-            onStartCombat={handleStartCombatFromEncounter}
-            onAddAsReinforcement={handleAddAsReinforcement}
-          />
-        )}
+          {activeTab === 'encounters' && (
+            <EncountersView
+              encounters={encounters}
+              templates={templates}
+              isCombatActive={combatState?.isActive || false}
+              onSaveEncounter={handleSaveSingleEncounter}
+              onDeleteEncounter={handleDeleteEncounter}
+              onDuplicateEncounter={handleDuplicateEncounter}
+              onStartCombat={handleStartCombatFromEncounter}
+              onAddAsReinforcement={handleAddAsReinforcement}
+            />
+          )}
 
-        {activeTab === 'templates' && (
-          <TemplatesView
-            templates={templates}
-            onSaveTemplate={handleSaveSingleTemplate}
-            onDeleteTemplate={handleDeleteTemplate}
-            onDuplicateTemplate={handleDuplicateTemplate}
-            onAddToCombat={handleAddCreatureToCombat}
-            onAddToCombatWithOptions={handleAddCreatureToCombatWithOptions}
-            onNavigateToCombat={() => setActiveTab('combat')}
-            diceSystem={combatState?.diceSystem || 'd20'}
-          />
-        )}
+          {activeTab === 'templates' && (
+            <TemplatesView
+              templates={templates}
+              onSaveTemplate={handleSaveSingleTemplate}
+              onDeleteTemplate={handleDeleteTemplate}
+              onDuplicateTemplate={handleDuplicateTemplate}
+              onAddToCombat={handleAddCreatureToCombat}
+              onAddToCombatWithOptions={handleAddCreatureToCombatWithOptions}
+              onNavigateToCombat={() => setActiveTab('combat')}
+              diceSystem={combatState?.diceSystem || 'd20'}
+            />
+          )}
 
-        {activeTab === 'party' && (
-          <PartyView
-            party={party}
-            onSaveMember={handleSavePartyMember}
-            onDeleteMember={handleDeletePartyMember}
-            onHealAll={handleHealAllParty}
-            onAddToCombat={handleAddHeroToCombat}
-            combatantPartyIds={combatantPartyIds}
-          />
-        )}
+          {activeTab === 'party' && (
+            <PartyView
+              party={party}
+              onSaveMember={handleSavePartyMember}
+              onDeleteMember={handleDeletePartyMember}
+              onHealAll={handleHealAllParty}
+              onAddToCombat={handleAddHeroToCombat}
+              combatantPartyIds={combatantPartyIds}
+            />
+          )}
+        </Suspense>
       </main>
 
       {/* Footer */}

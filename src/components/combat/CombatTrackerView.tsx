@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ActiveCombatState,
   Combatant,
@@ -10,12 +10,13 @@ import {
   DiceSystem,
 } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
-import { sortCombatantsPreservingTurn } from '../../utils/combatUtils';
+import { sortCombatantsPreservingTurn, findNextTurn } from '../../utils/combatUtils';
 import { ConditionPickerModal } from './ConditionPickerModal';
 import { HpAdjustModal } from './HpAdjustModal';
 import { AddCombatantModal } from './AddCombatantModal';
 import { PartySelectionModal } from './PartySelectionModal';
 import { EditCombatantModal } from './EditCombatantModal';
+import { QuickLoadEncounterModal } from './QuickLoadEncounterModal';
 import {
   Play,
   RotateCcw,
@@ -25,10 +26,8 @@ import {
   Heart,
   Shield,
   Zap,
-  Sparkles,
   ChevronDown,
   ChevronUp,
-  X,
   Scroll,
   Users,
   Dices,
@@ -37,7 +36,6 @@ import {
   Eye,
   EyeOff,
   Flame,
-  Layers,
   FileText,
   Pencil,
   ArrowUpDown,
@@ -49,6 +47,15 @@ interface Props {
   party: PartyMember[];
   templates: CreatureTemplate[];
   encounters: Encounter[];
+}
+
+interface TurnAdvanceSnapshot {
+  fromCombatantId?: string;
+  toCombatantId: string;
+  fromRound: number;
+  toRound: number;
+  conditionsBefore: Condition[];
+  delayedClearedId?: string;
 }
 
 export const CombatTrackerView: React.FC<Props> = ({
@@ -75,13 +82,18 @@ export const CombatTrackerView: React.FC<Props> = ({
   const [showLog, setShowLog] = useState(false);
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null);
 
+  // Last turn transitions, used by "previous turn" to undo condition ticks.
+  const turnHistoryRef = useRef<TurnAdvanceSnapshot[]>([]);
+
   // Spacebar shortcut to advance turn
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input or textarea
+      const target = e.target as HTMLElement;
+      // Don't trigger if the user is typing or activating an interactive control.
       if (
-        ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName) ||
-        (e.target as HTMLElement).isContentEditable
+        ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) ||
+        target.isContentEditable ||
+        target.closest('[role="dialog"]')
       ) {
         return;
       }
@@ -95,19 +107,6 @@ export const CombatTrackerView: React.FC<Props> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
-
-  // Helper to add log message
-  const addLog = (message: string, type: CombatLogEntry['type'] = 'system') => {
-    if (!combatState) return;
-    const newEntry: CombatLogEntry = {
-      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      round: combatState.round,
-      message,
-      type,
-    };
-    return [newEntry, ...combatState.log.slice(0, 49)];
-  };
 
   // 1. Initialize a new combat state if none exists
   const ensureCombatState = (): ActiveCombatState => {
@@ -242,7 +241,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
   // Roll initiative for all NPCs
   const handleRollInitiativeNpc = () => {
-    if (!combatState) return;
+    if (!combatState || combatState.diceSystem === 'manual') return;
     const updated = combatState.combatants.map((c) => {
       if (c.type !== 'player') {
         const { total } = rollInitiativeForSystem(combatState.diceSystem, c.initiativeModifier);
@@ -266,7 +265,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
   // Roll initiative for ALL combatants
   const handleRollInitiativeAll = () => {
-    if (!combatState) return;
+    if (!combatState || combatState.diceSystem === 'manual') return;
     const updated = combatState.combatants.map((c) => {
       const { total } = rollInitiativeForSystem(combatState.diceSystem, c.initiativeModifier);
       return { ...c, initiative: total };
@@ -289,14 +288,18 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handleStartCombat = () => {
     if (!combatState || combatState.combatants.length === 0) return;
 
+    turnHistoryRef.current = [];
     const { sortedCombatants } = sortCombatantsPreservingTurn(combatState.combatants, 0, false);
+    const firstTurn = findNextTurn(sortedCombatants, -1);
+    const firstTurnIndex = firstTurn?.index ?? 0;
+    const firstCombatant = sortedCombatants[firstTurnIndex];
 
     const newLog = [
       {
         id: String(Date.now()),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         round: 1,
-        message: `Бой начался! Раунд 1. Первый ходит: ${sortedCombatants[0].name} (инициатива ${sortedCombatants[0].initiative})`,
+        message: `Бой начался! Раунд 1. Первый ходит: ${firstCombatant.name} (инициатива ${firstCombatant.initiative})`,
         type: 'round' as const,
       },
       ...combatState.log,
@@ -306,7 +309,7 @@ export const CombatTrackerView: React.FC<Props> = ({
       ...combatState,
       isActive: true,
       round: 1,
-      currentTurnIndex: 0,
+      currentTurnIndex: firstTurnIndex,
       combatants: sortedCombatants,
       log: newLog,
     });
@@ -378,20 +381,23 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handleNextTurn = () => {
     if (!combatState || combatState.combatants.length === 0) return;
 
-    let nextIndex = combatState.currentTurnIndex + 1;
-    let nextRound = combatState.round;
     const activeCombatants = combatState.combatants;
 
+    const nextTurn = findNextTurn(activeCombatants, combatState.currentTurnIndex);
+    if (!nextTurn) return;
+
+    const nextIndex = nextTurn.index;
+    const nextRound = combatState.round + nextTurn.roundIncrement;
+
     // Check if round finished
-    let logMsg = '';
-    if (nextIndex >= activeCombatants.length) {
-      nextIndex = 0;
-      nextRound += 1;
-      logMsg = `--- НАЧАЛО РАУНДА ${nextRound} ---`;
-    }
+    const logMsg =
+      nextTurn.roundIncrement > 0 ? `--- НАЧАЛО РАУНДА ${nextRound} ---` : '';
 
     // Decrement conditions for the combatant finishing their turn
     const currentCombatant = activeCombatants[combatState.currentTurnIndex];
+    const conditionsBefore = currentCombatant
+      ? currentCombatant.conditions.map((condition) => ({ ...condition }))
+      : [];
     let updatedCombatants = [...activeCombatants];
 
     if (currentCombatant) {
@@ -409,8 +415,28 @@ export const CombatTrackerView: React.FC<Props> = ({
       );
     }
 
-    const nextCombatant = updatedCombatants[nextIndex];
-    const turnMsg = `Ход перешел к: ${nextCombatant.name} (Инициатива ${nextCombatant.initiative})`;
+    let nextCombatant = updatedCombatants[nextIndex];
+    let delayCompleted = false;
+    if (nextCombatant.isDelayed) {
+      delayCompleted = true;
+      updatedCombatants = updatedCombatants.map((c, i) =>
+        i === nextIndex ? { ...c, isDelayed: false } : c
+      );
+      nextCombatant = updatedCombatants[nextIndex];
+    }
+    const turnMsg = `Ход перешел к: ${nextCombatant.name} (Инициатива ${nextCombatant.initiative})${delayCompleted ? ' — задержка завершена' : ''}`;
+
+    turnHistoryRef.current.push({
+      fromCombatantId: currentCombatant?.id,
+      toCombatantId: nextCombatant.id,
+      fromRound: combatState.round,
+      toRound: nextRound,
+      conditionsBefore,
+      delayedClearedId: delayCompleted ? nextCombatant.id : undefined,
+    });
+    if (turnHistoryRef.current.length > 50) {
+      turnHistoryRef.current.shift();
+    }
 
     const logsToAdd: CombatLogEntry[] = [];
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -445,6 +471,46 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handlePrevTurn = () => {
     if (!combatState || combatState.combatants.length === 0) return;
 
+    const snapshot = turnHistoryRef.current[turnHistoryRef.current.length - 1];
+    const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
+
+    if (
+      snapshot &&
+      currentCombatant?.id === snapshot.toCombatantId &&
+      combatState.round === snapshot.toRound
+    ) {
+      turnHistoryRef.current.pop();
+
+      const restoredCombatants = combatState.combatants.map((combatant) => {
+        let restored = combatant;
+        if (snapshot.fromCombatantId && combatant.id === snapshot.fromCombatantId) {
+          restored = {
+            ...restored,
+            conditions: snapshot.conditionsBefore.map((condition) => ({ ...condition })),
+          };
+        }
+        if (snapshot.delayedClearedId && combatant.id === snapshot.delayedClearedId) {
+          restored = { ...restored, isDelayed: true };
+        }
+        return restored;
+      });
+
+      const restoredIndex = snapshot.fromCombatantId
+        ? restoredCombatants.findIndex((combatant) => combatant.id === snapshot.fromCombatantId)
+        : -1;
+
+      onUpdateCombatState({
+        ...combatState,
+        round: snapshot.fromRound,
+        currentTurnIndex:
+          restoredIndex !== -1
+            ? restoredIndex
+            : Math.max(0, combatState.currentTurnIndex - 1),
+        combatants: restoredCombatants,
+      });
+      return;
+    }
+
     let prevIndex = combatState.currentTurnIndex - 1;
     let prevRound = combatState.round;
 
@@ -464,6 +530,7 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handleResetCombat = () => {
     if (confirm('Сбросить текущий бой и вернуть порядок в режим подготовки?')) {
       if (combatState) {
+        turnHistoryRef.current = [];
         onUpdateCombatState({
           ...combatState,
           isActive: false,
@@ -477,6 +544,7 @@ export const CombatTrackerView: React.FC<Props> = ({
   // Clear all combatants
   const handleClearCombatants = () => {
     if (confirm('Очистить список участников боя?')) {
+      turnHistoryRef.current = [];
       onUpdateCombatState(null);
     }
   };
@@ -520,8 +588,76 @@ export const CombatTrackerView: React.FC<Props> = ({
 
     onUpdateCombatState({
       ...combatState,
+      isActive: updated.length === 0 ? false : combatState.isActive,
+      round: updated.length === 0 ? 1 : combatState.round,
       combatants: updated,
+      currentTurnIndex: updated.length === 0 ? 0 : nextTurnIndex,
+    });
+  };
+
+  // Delay = move the combatant to the end of the current round. The badge
+  // stays until their postponed turn actually starts.
+  const handleToggleDelay = (combatantId: string) => {
+    if (!combatState) return;
+    const target = combatState.combatants.find((c) => c.id === combatantId);
+    if (!target) return;
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const makeLog = (message: string): CombatLogEntry => ({
+      id: `delay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: timeStr,
+      round: combatState.round,
+      message,
+      type: 'system',
+    });
+
+    if (target.isDelayed) {
+      onUpdateCombatState({
+        ...combatState,
+        combatants: combatState.combatants.map((c) =>
+          c.id === combatantId ? { ...c, isDelayed: false } : c
+        ),
+        log: [makeLog(`${target.name} снова в очереди хода`), ...combatState.log],
+      });
+      return;
+    }
+
+    if (!combatState.isActive) {
+      onUpdateCombatState({
+        ...combatState,
+        combatants: combatState.combatants.map((c) =>
+          c.id === combatantId ? { ...c, isDelayed: true } : c
+        ),
+        log: [makeLog(`${target.name} отмечен как задержавший ход`), ...combatState.log],
+      });
+      return;
+    }
+
+    const activeId = combatState.combatants[combatState.currentTurnIndex]?.id;
+    const fromIndex = combatState.combatants.findIndex((c) => c.id === combatantId);
+    const reordered = [...combatState.combatants];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.push({ ...moved, isDelayed: true });
+
+    let nextTurnIndex: number;
+    if (activeId === combatantId) {
+      nextTurnIndex = fromIndex < reordered.length ? fromIndex : 0;
+    } else {
+      const activeIndex = reordered.findIndex((c) => c.id === activeId);
+      nextTurnIndex =
+        activeIndex !== -1
+          ? activeIndex
+          : Math.max(0, Math.min(combatState.currentTurnIndex, reordered.length - 1));
+    }
+
+    onUpdateCombatState({
+      ...combatState,
+      combatants: reordered,
       currentTurnIndex: nextTurnIndex,
+      log: [
+        makeLog(`${target.name} задерживает ход и переносится в конец раунда`),
+        ...combatState.log,
+      ],
     });
   };
 
@@ -555,7 +691,8 @@ export const CombatTrackerView: React.FC<Props> = ({
     combatantId: string,
     newCurrentHp: number,
     newTempHp: number,
-    logMsg: string
+    logMsg: string,
+    logType: CombatLogEntry['type'] = 'damage'
   ) => {
     if (!combatState) return;
     const updated = combatState.combatants.map((c) => {
@@ -579,7 +716,7 @@ export const CombatTrackerView: React.FC<Props> = ({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         round: combatState.round,
         message: logMsg,
-        type: 'damage' as const,
+        type: logType,
       },
       ...combatState.log,
     ];
@@ -616,7 +753,8 @@ export const CombatTrackerView: React.FC<Props> = ({
       combatant.id,
       newHp,
       newTemp,
-      `${combatant.name} -${damage} HP. HP: ${newHp}/${combatant.hp.max}`
+      `${combatant.name} -${damage} HP. HP: ${newHp}/${combatant.hp.max}`,
+      'damage'
     );
   };
 
@@ -626,7 +764,8 @@ export const CombatTrackerView: React.FC<Props> = ({
       combatant.id,
       newHp,
       combatant.hp.temp,
-      `${combatant.name} +${heal} HP. HP: ${newHp}/${combatant.hp.max}`
+      `${combatant.name} +${heal} HP. HP: ${newHp}/${combatant.hp.max}`,
+      'heal'
     );
   };
 
@@ -685,9 +824,14 @@ export const CombatTrackerView: React.FC<Props> = ({
     combatState && combatState.isActive && combatants.length > 0
       ? combatants[combatState.currentTurnIndex]
       : null;
-  const nextOnDeck =
+  const nextTurnInfo =
     combatState && combatState.isActive && combatants.length > 1
-      ? combatants[(combatState.currentTurnIndex + 1) % combatants.length]
+      ? findNextTurn(combatants, combatState.currentTurnIndex)
+      : null;
+  const nextOnDeckIndex = nextTurnInfo?.index ?? null;
+  const nextOnDeck =
+    nextOnDeckIndex !== null && nextOnDeckIndex !== combatState?.currentTurnIndex
+      ? combatants[nextOnDeckIndex]
       : null;
 
   return (
@@ -720,7 +864,7 @@ export const CombatTrackerView: React.FC<Props> = ({
         <div className="grid grid-cols-3 sm:flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => setIsPartyModalOpen(true)}
-            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
+            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
             title="Выбрать персонажей партии для добавления в бой"
           >
             <Users className="w-3.5 h-3.5 text-blue-400" />
@@ -730,7 +874,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
           <button
             onClick={() => setIsLoadEncounterOpen(true)}
-            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
+            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
             title="Загрузить заготовленный энкаунтер"
           >
             <Scroll className="w-3.5 h-3.5 text-amber-400" />
@@ -739,7 +883,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
           <button
             onClick={() => setIsAddCombatantOpen(true)}
-            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
+            className="px-2.5 sm:px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
             title="Добавить одиночного участника или подкрепление"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-400" />
@@ -820,21 +964,25 @@ export const CombatTrackerView: React.FC<Props> = ({
               <div className="grid grid-cols-2 sm:flex items-center gap-2">
                 <button
                   onClick={handleRollInitiativeNpc}
-                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                  disabled={combatState?.diceSystem === 'manual'}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-800 text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                  title={combatState?.diceSystem === 'manual' ? 'В ручном режиме инициатива вводится вручную' : 'Бросить инициативу для NPC'}
                 >
                   <Dices className="w-3.5 h-3.5" /> Бросить NPC
                 </button>
 
                 <button
                   onClick={handleRollInitiativeAll}
-                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                  disabled={combatState?.diceSystem === 'manual'}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                  title={combatState?.diceSystem === 'manual' ? 'В ручном режиме инициатива вводится вручную' : 'Бросить инициативу всем участникам'}
                 >
                   <Dices className="w-3.5 h-3.5" /> Бросить ВСЕМ
                 </button>
 
                 <button
                   onClick={handleSortByInitiative}
-                  className="col-span-2 sm:col-span-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                  className="col-span-2 sm:col-span-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
                   title="Упорядочить список по убыванию инициативы"
                 >
                   <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" /> Сортировать
@@ -989,7 +1137,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
               <button
                 onClick={handleSortByInitiative}
-                className="py-1.5 px-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                className="py-1.5 px-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition flex items-center justify-center gap-1.5"
                 title="Пересортировать всех участников по инициативе (текущий ход сохранится)"
               >
                 <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
@@ -1012,7 +1160,7 @@ export const CombatTrackerView: React.FC<Props> = ({
               if (!showDefeated && combatant.isDefeated) return null;
 
               const isActive = index === combatState.currentTurnIndex;
-              const isNext = index === (combatState.currentTurnIndex + 1) % combatants.length;
+              const isNext = nextOnDeckIndex !== null && index === nextOnDeckIndex;
               const hpPercent = Math.max(
                 0,
                 Math.min(100, (combatant.hp.current / combatant.hp.max) * 100)
@@ -1210,7 +1358,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                         </button>
                         <button
                           onClick={() => setHpModalCombatant(combatant)}
-                          className="py-1 px-2 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-xs font-semibold text-center whitespace-nowrap active:scale-95 transition"
+                          className="py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold text-center whitespace-nowrap active:scale-95 transition"
                         >
                           Урон/Хил
                         </button>
@@ -1224,6 +1372,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                         {combatant.conditions.map((cond) => (
                           <span
                             key={cond.id}
+                            title={cond.notes || undefined}
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] border font-medium"
                             style={{
                               borderColor: `${cond.color}60`,
@@ -1249,7 +1398,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
                         <button
                           onClick={() => setConditionModalCombatant(combatant)}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-1 transition"
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-1 transition"
                         >
                           <Plus className="w-3 h-3 text-amber-400" />
                           <span>Статус</span>
@@ -1259,15 +1408,13 @@ export const CombatTrackerView: React.FC<Props> = ({
                       {/* Defeated & Delayed toggles */}
                       <div className="flex items-center gap-1 shrink-0">
                         <button
-                          onClick={() =>
-                            handleUpdateCombatant(combatant.id, { isDelayed: !combatant.isDelayed })
-                          }
+                          onClick={() => handleToggleDelay(combatant.id)}
                           className={`p-2 rounded-lg text-xs transition ${
                             combatant.isDelayed
                               ? 'bg-purple-950 text-purple-300 border border-purple-800'
                               : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
                           }`}
-                          title="Задержать ход"
+                          title={combatant.isDelayed ? 'Вернуть в очередь хода' : 'Задержать ход: перенести в конец раунда'}
                         >
                           <Clock className="w-4 h-4" />
                         </button>
@@ -1455,55 +1602,12 @@ export const CombatTrackerView: React.FC<Props> = ({
       />
 
       {/* Quick Load Encounter Modal */}
-      {isLoadEncounterOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
-              <div className="flex items-center gap-2">
-                <Scroll className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base font-bold text-white font-rpg">
-                  Выберите энкаунтер для добавления
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsLoadEncounterOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 max-h-[70vh] overflow-y-auto space-y-2.5">
-              {encounters.length === 0 ? (
-                <div className="text-center py-6 text-slate-500 text-xs">
-                  Нет сохраненных энкаунтеров. Создайте их во вкладке «Энкаунтеры».
-                </div>
-              ) : (
-                encounters.map((enc) => (
-                  <button
-                    key={enc.id}
-                    type="button"
-                    onClick={() => handleLoadEncounter(enc)}
-                    className="w-full text-left p-3.5 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/50 rounded-xl transition group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-white group-hover:text-amber-300 text-sm">
-                        {enc.title}
-                      </span>
-                      <span className="text-xs text-amber-400 font-semibold flex items-center gap-1">
-                        + Добавить
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      {enc.monsters.map((m) => `${m.name} ×${m.count}`).join(', ')}
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <QuickLoadEncounterModal
+        isOpen={isLoadEncounterOpen}
+        onClose={() => setIsLoadEncounterOpen(false)}
+        encounters={encounters}
+        onSelect={handleLoadEncounter}
+      />
     </div>
   );
 };

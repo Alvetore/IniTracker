@@ -1,4 +1,3 @@
-import { CreatureTemplate } from '../types';
 import { CatalogMonster } from '../types/bestiary';
 import { BESTIARY_5E14 } from '../data/bestiary5e14';
 import { BESTIARY_5E24 } from '../data/bestiary5e24';
@@ -93,7 +92,7 @@ export function findMonsterByUrlOrSlug(
   urlOrSlug: string,
   preferredEdition?: '5e14' | '5e24'
 ): CatalogMonster | null {
-  const { id, slug, rawName, edition: detectedEdition } = extractMonsterSlugAndId(urlOrSlug);
+  const { id, slug, edition: detectedEdition } = extractMonsterSlugAndId(urlOrSlug);
   const targetEdition = detectedEdition || preferredEdition;
 
   const normInput = normalizeUrl(urlOrSlug);
@@ -244,7 +243,7 @@ export function parseMonsterFromText(
     englishName = bracketMatch[2].trim();
   } else if (lines.length > 1) {
     // Case 2: Line 0 is Russian name, Line 1 is English name (e.g. "Банши" \n "Banshee" or "[Banshee]")
-    const secondLine = lines[1].trim().replace(/[\[\]()]/g, '');
+    const secondLine = lines[1].trim().replace(/[()[\]]/g, '');
     if (/^[a-zA-Z\s'-]+$/.test(secondLine) && secondLine.length < 50) {
       englishName = secondLine;
     }
@@ -348,7 +347,7 @@ export function parseMonsterFromText(
   }
 
   // Notes: take abilities / actions summary from text
-  let notes = '';
+  let notes: string;
   const actionsIdx = text.search(/(?:Действия|Actions|Особенности|Черты|Traits)/i);
   if (actionsIdx !== -1) {
     notes = text.substring(actionsIdx, actionsIdx + 600).trim();
@@ -373,35 +372,5 @@ export function parseMonsterFromText(
       sourceUrl ||
       (edition === '5e24' ? 'https://next.dnd.su/bestiary/' : 'https://5e14.dnd.su/bestiary/'),
     sourceLabel: edition === '5e24' ? 'next.dnd.su (5e24)' : '5e14.dnd.su (5e14)',
-  };
-}
-
-/**
- * Convert a CatalogMonster directly into a CreatureTemplate for the user's personal bestiary
- */
-export function convertCatalogMonsterToTemplate(monster: CatalogMonster): CreatureTemplate {
-  const isAlly = monster.category === 'Гуманоид' && monster.alignment.toLowerCase().includes('добр');
-  const type = isAlly ? 'ally' : 'enemy';
-
-  return {
-    id: `tpl-${monster.edition}-${monster.id}-${Date.now().toString(36)}`,
-    name: monster.name,
-    englishName: monster.englishName,
-    type,
-    maxHp: monster.maxHp,
-    armorClass: monster.armorClass,
-    initiativeModifier: monster.initiativeModifier,
-    tags: [
-      monster.edition === '5e24' ? '5e24' : '5e14',
-      monster.category,
-      `CR ${monster.cr}`,
-      monster.size,
-    ],
-    notes: monster.notes,
-    cr: monster.cr,
-    edition: monster.edition,
-    sourceUrl: monster.sourceUrl,
-    sourceLabel: monster.sourceLabel,
-    createdAt: Date.now(),
   };
 }
