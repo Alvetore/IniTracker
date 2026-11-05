@@ -597,7 +597,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Мультиатака: 2 скимитара (+5, 1d6+3) + 1 кинжал (+5, 1d4+3).\nПарирование: +2 к КД реакцией.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/438-bandit_captain/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/433-bandit-captain/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {
@@ -886,7 +886,7 @@ export const BESTIARY_5E14: CatalogMonster[] = [
       },
     ],
     notes: 'Притворяется предметом. Клейкое тело: схватывает цель при ударе.\nЛожноножка: +5, 1d8+3. Укус: +5, 1d8+3 колющего + 1d8 кислоты.',
-    sourceUrl: 'https://5e14.dnd.su/bestiary/114-mimic/',
+    sourceUrl: 'https://5e14.dnd.su/bestiary/236-mimic/',
     sourceLabel: '5e14.dnd.su (5e14)',
   },
   {

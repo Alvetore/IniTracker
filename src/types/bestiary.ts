@@ -1,5 +1,3 @@
-import { CreatureType } from './index';
-
 export interface CatalogMonster {
   id: string;
   name: string;
