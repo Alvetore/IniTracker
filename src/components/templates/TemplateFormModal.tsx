@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CreatureTemplate, CreatureType } from '../../types';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Plus, Sparkles, Shield, Heart, Zap, Tag } from 'lucide-react';
 
 interface Props {
@@ -76,6 +77,8 @@ export const TemplateFormModal: React.FC<Props> = ({
     setError('');
   }, [initialTemplate, isOpen]);
 
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen) return null;
 
   const handleToggleTag = (tag: string) => {
@@ -133,7 +136,14 @@ export const TemplateFormModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={initialTemplate ? 'Редактировать существо' : 'Новый шаблон существа'}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
@@ -151,6 +161,7 @@ export const TemplateFormModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
             title="Закрыть"
           >

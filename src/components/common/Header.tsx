@@ -6,7 +6,6 @@ import {
   Users,
   Dices,
   Save,
-  Flame,
   Palette,
 } from 'lucide-react';
 

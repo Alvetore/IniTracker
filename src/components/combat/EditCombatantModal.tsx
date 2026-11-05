@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Combatant, CreatureType, DiceSystem } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, UserCheck, Shield, Heart, Zap, Dices, FileText, Check } from 'lucide-react';
 
 interface Props {
@@ -46,6 +47,8 @@ export const EditCombatantModal: React.FC<Props> = ({
     }
   }, [combatant, isOpen]);
 
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen || !combatant) return null;
 
   const handleReroll = () => {
@@ -75,7 +78,14 @@ export const EditCombatantModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Редактирование участника: ${combatant.name}`}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-auto focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
@@ -92,6 +102,7 @@ export const EditCombatantModal: React.FC<Props> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />

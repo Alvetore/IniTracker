@@ -11,7 +11,6 @@ import {
   Trash2,
   Coffee,
   Users,
-  Sparkles,
   Check,
   Swords,
 } from 'lucide-react';

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Condition, Combatant } from '../../types';
 import { STANDARD_CONDITIONS } from '../../utils/defaultData';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Sparkles, Clock, Plus } from 'lucide-react';
 
 interface Props {
@@ -22,11 +23,25 @@ export const ConditionPickerModal: React.FC<Props> = ({
   const [selectedColor, setSelectedColor] = useState('#8b5cf6');
   const [notes, setNotes] = useState('');
 
+  // Reset the form between openings and when switching to another combatant.
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedName('');
+      setCustomName('');
+      setDurationRounds(null);
+      setSelectedColor('#8b5cf6');
+      setNotes('');
+    }
+  }, [isOpen, combatant?.id]);
+
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen || !combatant) return null;
 
   const handleSelectStandard = (cond: { name: string; color: string }) => {
     setSelectedName(cond.name);
     setSelectedColor(cond.color);
+    setCustomName('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -48,7 +63,14 @@ export const ConditionPickerModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Добавить состояние: ${combatant.name}`}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
@@ -62,6 +84,7 @@ export const ConditionPickerModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
           >
             <X className="w-5 h-5" />

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { rollDie, parseDiceFormula } from '../../utils/dice';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Dices, RotateCcw } from 'lucide-react';
 
 interface Props {
@@ -19,6 +20,8 @@ export const DiceRollerModal: React.FC<Props> = ({ isOpen, onClose, onLogRoll })
   const [formula, setFormula] = useState('');
   const [lastResult, setLastResult] = useState<number | null>(null);
   const [log, setLog] = useState<RollLogItem[]>([]);
+
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -51,7 +54,14 @@ export const DiceRollerModal: React.FC<Props> = ({ isOpen, onClose, onLogRoll })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Броски кубиков"
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
@@ -60,6 +70,7 @@ export const DiceRollerModal: React.FC<Props> = ({ isOpen, onClose, onLogRoll })
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
           >
             <X className="w-5 h-5" />
@@ -100,7 +111,7 @@ export const DiceRollerModal: React.FC<Props> = ({ isOpen, onClose, onLogRoll })
               type="button"
               onClick={() => setLog([])}
               title="Очистить лог"
-              className="py-2 px-2 rounded-xl border border-slate-800 bg-slate-850 hover:bg-slate-800 text-slate-400 text-xs flex items-center justify-center"
+              className="py-2 px-2 rounded-xl border border-slate-800 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs flex items-center justify-center"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>

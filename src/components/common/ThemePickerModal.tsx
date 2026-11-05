@@ -1,5 +1,6 @@
 import React from 'react';
 import { THEMES, ThemeId } from '../../types/theme';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Palette, Check } from 'lucide-react';
 
 interface Props {
@@ -15,11 +16,20 @@ export const ThemePickerModal: React.FC<Props> = ({
   currentTheme,
   onSelectTheme,
 }) => {
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Темы оформления трекера"
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
@@ -37,6 +47,7 @@ export const ThemePickerModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />

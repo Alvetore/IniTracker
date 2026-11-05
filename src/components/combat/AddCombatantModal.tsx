@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Combatant, CreatureTemplate, CreatureType, PartyMember, DiceSystem } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
-import { X, UserPlus, Sparkles, Plus, Users, Zap } from 'lucide-react';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
+import { X, UserPlus, Plus, Zap } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -37,7 +38,7 @@ export const AddCombatantModal: React.FC<Props> = ({
         setSelectedPartyId(party[0].id);
       }
     }
-  }, [isOpen, templates, party]);
+  }, [isOpen, templates, party, selectedTemplateId, selectedPartyId]);
 
   // Custom fields
   const [customName, setCustomName] = useState('');
@@ -51,11 +52,21 @@ export const AddCombatantModal: React.FC<Props> = ({
   const [initMode, setInitMode] = useState<'auto' | 'manual'>('auto');
   const [manualInitVal, setManualInitVal] = useState<number>(10);
 
+  // A "manual" dice system has nothing to roll: force manual initiative entry.
+  useEffect(() => {
+    if (isOpen && diceSystem === 'manual') {
+      setInitMode('manual');
+    }
+  }, [isOpen, diceSystem]);
+
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newCombatants: Combatant[] = [];
+    const effectiveInitMode = diceSystem === 'manual' ? 'manual' : initMode;
 
     if (mode === 'template') {
       const targetId = selectedTemplateId || (templates.length > 0 ? templates[0].id : '');
@@ -65,7 +76,7 @@ export const AddCombatantModal: React.FC<Props> = ({
       for (let i = 1; i <= count; i++) {
         const name = count > 1 ? `${tpl.name} ${i}` : tpl.name;
         const initVal =
-          initMode === 'manual'
+          effectiveInitMode === 'manual'
             ? manualInitVal
             : rollInitiativeForSystem(diceSystem, tpl.initiativeModifier).total;
 
@@ -96,7 +107,7 @@ export const AddCombatantModal: React.FC<Props> = ({
       for (let i = 1; i <= count; i++) {
         const name = count > 1 ? `${hero.name} ${i}` : hero.name;
         const initVal =
-          initMode === 'manual'
+          effectiveInitMode === 'manual'
             ? manualInitVal
             : rollInitiativeForSystem(diceSystem, hero.initiativeModifier).total;
 
@@ -125,7 +136,7 @@ export const AddCombatantModal: React.FC<Props> = ({
       for (let i = 1; i <= count; i++) {
         const name = count > 1 ? `${customName.trim()} ${i}` : customName.trim();
         const initVal =
-          initMode === 'manual'
+          effectiveInitMode === 'manual'
             ? manualInitVal
             : rollInitiativeForSystem(diceSystem, customInitMod).total;
 
@@ -155,7 +166,14 @@ export const AddCombatantModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Добавить участника в бой"
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
@@ -164,6 +182,7 @@ export const AddCombatantModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
           >
             <X className="w-5 h-5" />
@@ -295,6 +314,47 @@ export const AddCombatantModal: React.FC<Props> = ({
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 font-semibold mb-1">Тип</label>
+                <div className="grid grid-cols-5 gap-1">
+                  {(
+                    [
+                      { id: 'player', label: 'Игрок' },
+                      { id: 'enemy', label: 'Враг' },
+                      { id: 'ally', label: 'Союзник' },
+                      { id: 'neutral', label: 'Нейтрал' },
+                      { id: 'hazard', label: 'Событие' },
+                    ] as const
+                  ).map((typeOption) => (
+                    <button
+                      key={typeOption.id}
+                      type="button"
+                      onClick={() => setCustomType(typeOption.id)}
+                      className={`py-1 rounded-lg text-[10px] font-semibold border transition ${
+                        customType === typeOption.id
+                          ? 'bg-amber-500 text-slate-950 border-amber-500'
+                          : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                      }`}
+                    >
+                      {typeOption.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 font-semibold mb-1">
+                  Заметки и способности
+                </label>
+                <textarea
+                  rows={2}
+                  value={customNotes}
+                  onChange={(e) => setCustomNotes(e.target.value)}
+                  placeholder="Атаки, сопротивления, особенности..."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
             </div>
           )}
 
@@ -323,7 +383,7 @@ export const AddCombatantModal: React.FC<Props> = ({
                 min="1"
                 max="50"
                 value={count}
-                onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => setCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
                 className="w-16 bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-center text-xs text-white"
               />
             </div>
@@ -341,7 +401,13 @@ export const AddCombatantModal: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setInitMode('auto')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                  disabled={diceSystem === 'manual'}
+                  title={
+                    diceSystem === 'manual'
+                      ? 'В ручном режиме инициатива вводится вручную'
+                      : 'Бросить инициативу автоматически'
+                  }
+                  className={`px-2.5 py-1 rounded-md font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${
                     initMode === 'auto'
                       ? 'bg-amber-500 text-slate-950 shadow-sm'
                       : 'text-slate-400 hover:text-white'

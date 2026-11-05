@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreatureTemplate, DiceSystem } from '../../types';
 import { CatalogMonster } from '../../types/bestiary';
 import { rollInitiativeForSystem } from '../../utils/dice';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import {
   X,
   Swords,
@@ -12,8 +13,6 @@ import {
   Heart,
   Shield,
   Zap,
-  Check,
-  Users,
 } from 'lucide-react';
 
 export interface AddToCombatOptions {
@@ -22,6 +21,8 @@ export interface AddToCombatOptions {
   initiativeMode: 'auto' | 'manual';
   groupInitiative: boolean;
   manualInitiative: number;
+  /** Roll shown in the modal; reused for group initiative so the applied value matches the preview. */
+  previewInitiative?: number;
   navigateNow: boolean;
 }
 
@@ -54,12 +55,17 @@ export const AddToCombatModal: React.FC<Props> = ({
   useEffect(() => {
     if (isOpen && creature) {
       setCount(1);
+      if (diceSystem === 'manual') {
+        setInitiativeMode('manual');
+      }
       const mod = creature.initiativeModifier || 0;
       const roll = rollInitiativeForSystem(diceSystem, mod);
       setPreviewRoll(roll);
       setManualInitiative(roll.total);
     }
   }, [isOpen, creature, diceSystem]);
+
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
 
   if (!isOpen || !creature) return null;
 
@@ -82,6 +88,7 @@ export const AddToCombatModal: React.FC<Props> = ({
       initiativeMode,
       groupInitiative,
       manualInitiative,
+      previewInitiative: initiativeMode === 'auto' ? previewRoll.total : undefined,
       navigateNow,
     });
     onClose();
@@ -89,7 +96,14 @@ export const AddToCombatModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden my-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Добавить в бой: ${creature.name}`}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden my-auto focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2 min-w-0">
@@ -111,6 +125,7 @@ export const AddToCombatModal: React.FC<Props> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
@@ -167,7 +182,7 @@ export const AddToCombatModal: React.FC<Props> = ({
                   min="1"
                   max="50"
                   value={count}
-                  onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) => setCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
                   className="w-14 bg-transparent text-center font-bold text-sm text-white focus:outline-none"
                 />
                 <button
@@ -212,7 +227,13 @@ export const AddToCombatModal: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setInitiativeMode('auto')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 ${
+                  disabled={diceSystem === 'manual'}
+                  title={
+                    diceSystem === 'manual'
+                      ? 'В ручном режиме инициатива вводится вручную'
+                      : 'Бросить инициативу автоматически'
+                  }
+                  className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed ${
                     initiativeMode === 'auto'
                       ? 'bg-amber-500 text-slate-950 shadow-sm'
                       : 'text-slate-400 hover:text-white'

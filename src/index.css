@@ -31,49 +31,30 @@ button, a, input, select, textarea {
 [data-theme="grimdark"] {
   --theme-accent: #e11d48;
   --theme-font: 'Cinzel', serif;
+
+  /* Tailwind v4 colors are CSS variables, so overriding them themes
+     normal, hover and opacity variants consistently. */
+  --color-slate-950: #090305;
+  --color-slate-900: #17070d;
+  --color-slate-800: #240c15;
+  --color-slate-700: #541731;
+  --color-amber-500: #e11d48;
+  --color-amber-400: #f43f5e;
+  --color-amber-300: #fb7185;
+  --color-amber-700: #9f1239;
+
   background-color: #090305 !important;
   color: #ffe4e6 !important;
 }
-[data-theme="grimdark"] [class*="bg-slate-950"] {
-  background-color: #090305 !important;
-}
-[data-theme="grimdark"] [class*="bg-slate-900"] {
-  background-color: #17070d !important;
-}
-[data-theme="grimdark"] [class*="bg-slate-850"],
-[data-theme="grimdark"] [class*="bg-slate-800"] {
-  background-color: #240c15 !important;
-}
-[data-theme="grimdark"] [class*="border-slate-800"] {
+
+[data-theme="grimdark"] [class^="border-slate-800"],
+[data-theme="grimdark"] [class*=" border-slate-800"] {
   border-color: #3b1122 !important;
 }
-[data-theme="grimdark"] [class*="border-slate-700"] {
+
+[data-theme="grimdark"] [class^="border-slate-700"],
+[data-theme="grimdark"] [class*=" border-slate-700"] {
   border-color: #541731 !important;
-}
-[data-theme="grimdark"] .bg-amber-500 {
-  background-color: #e11d48 !important;
-  color: #ffffff !important;
-}
-[data-theme="grimdark"] [class*="hover:bg-amber-400"]:hover,
-[data-theme="grimdark"] .hover\:bg-amber-400:hover {
-  background-color: #f43f5e !important;
-}
-[data-theme="grimdark"] [class*="text-amber-400"],
-[data-theme="grimdark"] [class*="text-amber-300"] {
-  color: #fb7185 !important;
-}
-[data-theme="grimdark"] [class*="border-amber-500"],
-[data-theme="grimdark"] [class*="border-amber-400"] {
-  border-color: #e11d48 !important;
-}
-[data-theme="grimdark"] [class*="bg-amber-500/"] {
-  background-color: rgba(225, 29, 72, 0.22) !important;
-}
-[data-theme="grimdark"] [class*="shadow-amber-500"] {
-  --tw-shadow-color: rgba(225, 29, 72, 0.3) !important;
-}
-[data-theme="grimdark"] [class*="ring-amber-"] {
-  --tw-ring-color: rgba(225, 29, 72, 0.5) !important;
 }
 
 /* ============================================================
@@ -82,49 +63,28 @@ button, a, input, select, textarea {
 [data-theme="cyberpunk"] {
   --theme-accent: #06b6d4;
   --theme-font: 'Rajdhani', sans-serif;
+
+  --color-slate-950: #020512;
+  --color-slate-900: #07122b;
+  --color-slate-800: #0e224f;
+  --color-slate-700: #1a4599;
+  --color-amber-500: #06b6d4;
+  --color-amber-400: #22d3ee;
+  --color-amber-300: #22d3ee;
+  --color-amber-700: #0e7490;
+
   background-color: #020512 !important;
   color: #e0f2fe !important;
 }
-[data-theme="cyberpunk"] [class*="bg-slate-950"] {
-  background-color: #020512 !important;
-}
-[data-theme="cyberpunk"] [class*="bg-slate-900"] {
-  background-color: #07122b !important;
-}
-[data-theme="cyberpunk"] [class*="bg-slate-850"],
-[data-theme="cyberpunk"] [class*="bg-slate-800"] {
-  background-color: #0e224f !important;
-}
-[data-theme="cyberpunk"] [class*="border-slate-800"] {
+
+[data-theme="cyberpunk"] [class^="border-slate-800"],
+[data-theme="cyberpunk"] [class*=" border-slate-800"] {
   border-color: #123270 !important;
 }
-[data-theme="cyberpunk"] [class*="border-slate-700"] {
+
+[data-theme="cyberpunk"] [class^="border-slate-700"],
+[data-theme="cyberpunk"] [class*=" border-slate-700"] {
   border-color: #1a4599 !important;
-}
-[data-theme="cyberpunk"] .bg-amber-500 {
-  background-color: #06b6d4 !important;
-  color: #020512 !important;
-}
-[data-theme="cyberpunk"] [class*="hover:bg-amber-400"]:hover,
-[data-theme="cyberpunk"] .hover\:bg-amber-400:hover {
-  background-color: #22d3ee !important;
-}
-[data-theme="cyberpunk"] [class*="text-amber-400"],
-[data-theme="cyberpunk"] [class*="text-amber-300"] {
-  color: #22d3ee !important;
-}
-[data-theme="cyberpunk"] [class*="border-amber-500"],
-[data-theme="cyberpunk"] [class*="border-amber-400"] {
-  border-color: #06b6d4 !important;
-}
-[data-theme="cyberpunk"] [class*="bg-amber-500/"] {
-  background-color: rgba(6, 182, 212, 0.22) !important;
-}
-[data-theme="cyberpunk"] [class*="shadow-amber-500"] {
-  --tw-shadow-color: rgba(6, 182, 212, 0.3) !important;
-}
-[data-theme="cyberpunk"] [class*="ring-amber-"] {
-  --tw-ring-color: rgba(6, 182, 212, 0.5) !important;
 }
 
 /* ============================================================
@@ -133,49 +93,28 @@ button, a, input, select, textarea {
 [data-theme="eldritch"] {
   --theme-accent: #10b981;
   --theme-font: 'Crimson Pro', serif;
+
+  --color-slate-950: #020a06;
+  --color-slate-900: #06180e;
+  --color-slate-800: #0b2e1b;
+  --color-slate-700: #1a663c;
+  --color-amber-500: #10b981;
+  --color-amber-400: #34d399;
+  --color-amber-300: #34d399;
+  --color-amber-700: #047857;
+
   background-color: #020a06 !important;
   color: #d1fae5 !important;
 }
-[data-theme="eldritch"] [class*="bg-slate-950"] {
-  background-color: #020a06 !important;
-}
-[data-theme="eldritch"] [class*="bg-slate-900"] {
-  background-color: #06180e !important;
-}
-[data-theme="eldritch"] [class*="bg-slate-850"],
-[data-theme="eldritch"] [class*="bg-slate-800"] {
-  background-color: #0b2e1b !important;
-}
-[data-theme="eldritch"] [class*="border-slate-800"] {
+
+[data-theme="eldritch"] [class^="border-slate-800"],
+[data-theme="eldritch"] [class*=" border-slate-800"] {
   border-color: #124a2b !important;
 }
-[data-theme="eldritch"] [class*="border-slate-700"] {
+
+[data-theme="eldritch"] [class^="border-slate-700"],
+[data-theme="eldritch"] [class*=" border-slate-700"] {
   border-color: #1a663c !important;
-}
-[data-theme="eldritch"] .bg-amber-500 {
-  background-color: #10b981 !important;
-  color: #020a06 !important;
-}
-[data-theme="eldritch"] [class*="hover:bg-amber-400"]:hover,
-[data-theme="eldritch"] .hover\:bg-amber-400:hover {
-  background-color: #34d399 !important;
-}
-[data-theme="eldritch"] [class*="text-amber-400"],
-[data-theme="eldritch"] [class*="text-amber-300"] {
-  color: #34d399 !important;
-}
-[data-theme="eldritch"] [class*="border-amber-500"],
-[data-theme="eldritch"] [class*="border-amber-400"] {
-  border-color: #10b981 !important;
-}
-[data-theme="eldritch"] [class*="bg-amber-500/"] {
-  background-color: rgba(16, 185, 129, 0.22) !important;
-}
-[data-theme="eldritch"] [class*="shadow-amber-500"] {
-  --tw-shadow-color: rgba(16, 185, 129, 0.3) !important;
-}
-[data-theme="eldritch"] [class*="ring-amber-"] {
-  --tw-ring-color: rgba(16, 185, 129, 0.5) !important;
 }
 
 /* ============================================================
@@ -184,57 +123,76 @@ button, a, input, select, textarea {
 [data-theme="parchment"] {
   --theme-accent: #b45309;
   --theme-font: 'Crimson Pro', serif;
+
+  /* Surfaces */
+  --color-slate-950: #f4ecdf;
+  --color-slate-900: #fffdf8;
+  --color-slate-800: #ebdcc5;
+  --color-slate-700: #c4a780;
+
+  /* Text */
+  --color-slate-600: #6b543a;
+  --color-slate-500: #7d6344;
+  --color-slate-400: #5c4830;
+  --color-slate-300: #2b1f0f;
+  --color-slate-200: #2b1f0f;
+  --color-slate-100: #1a1208;
+
+  /* Accents and tinted badges */
+  --color-amber-500: #b45309;
+  --color-amber-400: #92400e;
+  --color-amber-300: #b45309;
+  --color-amber-200: #78350f;
+  --color-amber-700: #78350f;
+  --color-amber-950: #f3e1c4;
+  --color-amber-900: #ecd4ae;
+  --color-amber-800: #c9a06b;
+
   background-color: #f4ecdf !important;
   color: #1a1208 !important;
 }
-[data-theme="parchment"] [class*="bg-slate-950"] {
-  background-color: #f4ecdf !important;
-}
-[data-theme="parchment"] [class*="bg-slate-900"] {
-  background-color: #fffdf8 !important;
-}
-[data-theme="parchment"] [class*="bg-slate-850"],
-[data-theme="parchment"] [class*="bg-slate-800"] {
-  background-color: #ebdcc5 !important;
-}
-[data-theme="parchment"] [class*="border-slate-800"] {
+
+[data-theme="parchment"] [class^="border-slate-800"],
+[data-theme="parchment"] [class*=" border-slate-800"] {
   border-color: #d6be9d !important;
 }
-[data-theme="parchment"] [class*="border-slate-700"] {
+
+[data-theme="parchment"] [class^="border-slate-700"],
+[data-theme="parchment"] [class*=" border-slate-700"] {
   border-color: #c4a780 !important;
 }
-[data-theme="parchment"] .text-white,
-[data-theme="parchment"] [class*="text-slate-100"] {
+
+[data-theme="parchment"] [class^="border-slate-900"],
+[data-theme="parchment"] [class*=" border-slate-900"] {
+  border-color: #cdb897 !important;
+}
+
+[data-theme="parchment"] .text-white {
   color: #1a1208 !important;
 }
-[data-theme="parchment"] [class*="text-slate-200"],
-[data-theme="parchment"] [class*="text-slate-300"] {
-  color: #2b1f0f !important;
+
+[data-theme="parchment"] .hover\:text-white:hover {
+  color: #1a1208 !important;
 }
-[data-theme="parchment"] [class*="text-slate-400"] {
-  color: #5c4830 !important;
-}
-[data-theme="parchment"] [class*="text-slate-500"] {
-  color: #7d6344 !important;
-}
-[data-theme="parchment"] .bg-amber-500 {
-  background-color: #b45309 !important;
+
+/* Keep light text on solid colored buttons in the light theme. */
+[data-theme="parchment"] .text-white:is(
+  .bg-emerald-600,
+  .bg-emerald-500,
+  .bg-indigo-600,
+  .bg-indigo-500,
+  .bg-rose-600,
+  .bg-rose-500,
+  .bg-blue-600,
+  .bg-blue-500,
+  .bg-red-600,
+  .bg-red-500
+) {
   color: #fffdf8 !important;
 }
-[data-theme="parchment"] [class*="hover:bg-amber-400"]:hover,
-[data-theme="parchment"] .hover\:bg-amber-400:hover {
-  background-color: #92400e !important;
-}
-[data-theme="parchment"] [class*="text-amber-400"],
-[data-theme="parchment"] [class*="text-amber-300"] {
-  color: #b45309 !important;
-}
-[data-theme="parchment"] [class*="border-amber-500"],
-[data-theme="parchment"] [class*="border-amber-400"] {
-  border-color: #b45309 !important;
-}
-[data-theme="parchment"] [class*="bg-amber-500/"] {
-  background-color: rgba(180, 83, 9, 0.15) !important;
+
+[data-theme="parchment"] .border-white {
+  border-color: #1a1208 !important;
 }
 
 /* Custom scrollbars */
@@ -242,6 +200,7 @@ button, a, input, select, textarea {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--theme-accent, #64748b);
   border-radius: 9999px;

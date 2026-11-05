@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PartyMember } from '../../types';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, UserPlus, Heart, Shield, Zap, Eye, Palette } from 'lucide-react';
 
 interface Props {
@@ -62,6 +63,8 @@ export const PartyMemberModal: React.FC<Props> = ({
     setError('');
   }, [initialMember, isOpen]);
 
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,7 +79,7 @@ export const PartyMemberModal: React.FC<Props> = ({
       name: name.trim(),
       playerName: playerName.trim() || undefined,
       maxHp: Number(maxHp),
-      currentHp: Number(currentHp),
+      currentHp: Math.min(Number(maxHp), Math.max(0, Number(currentHp))),
       armorClass: armorClass.trim() || '10',
       initiativeModifier: Number(initiativeModifier),
       passivePerception: passivePerception.trim() || undefined,
@@ -90,7 +93,14 @@ export const PartyMemberModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={initialMember ? 'Редактировать героя' : 'Новый персонаж игрока'}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-auto focus:outline-none"
+      >
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
             <div
@@ -110,6 +120,7 @@ export const PartyMemberModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
@@ -153,7 +164,7 @@ export const PartyMemberModal: React.FC<Props> = ({
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-950/60 border border-slate-800/80 rounded-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-950/60 border border-slate-800/80 rounded-xl">
             <div>
               <label className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 mb-1">
                 <Heart className="w-3 h-3" /> Макс HP
@@ -165,8 +176,28 @@ export const PartyMemberModal: React.FC<Props> = ({
                 onChange={(e) => {
                   const val = Math.max(1, parseInt(e.target.value) || 1);
                   setMaxHp(val);
-                  if (!initialMember) setCurrentHp(val);
+                  if (!initialMember) {
+                    setCurrentHp(val);
+                  } else {
+                    setCurrentHp((prev) => Math.min(prev, val));
+                  }
                 }}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-2 text-center text-white font-bold text-sm"
+              />
+            </div>
+
+            <div>
+              <label
+                className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 mb-1"
+                title="Синхронизируется с активным боем (кроме случаев, когда в бою несколько копий героя)"
+              >
+                <Heart className="w-3 h-3" /> Тек. HP
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={currentHp}
+                onChange={(e) => setCurrentHp(Math.max(0, parseInt(e.target.value) || 0))}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-2 text-center text-white font-bold text-sm"
               />
             </div>

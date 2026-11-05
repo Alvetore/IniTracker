@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Storage } from '../../utils/storage';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Download, Upload, RotateCcw, AlertTriangle, Check, FileJson } from 'lucide-react';
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
 export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataReloaded }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [statusMsg, setStatusMsg] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -42,6 +45,14 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
       const content = event.target?.result as string;
       if (!content) return;
 
+      if (
+        !window.confirm(
+          'Импорт заменит текущие шаблоны, партию, энкаунтеры и активный бой данными из файла. Продолжить?'
+        )
+      ) {
+        return;
+      }
+
       const res = Storage.importAll(content);
       if (res.success) {
         setStatusMsg({ text: 'Данные успешно импортированы и обновлены!' });
@@ -49,6 +60,9 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
       } else {
         setStatusMsg({ text: res.error || 'Ошибка при чтении файла', error: true });
       }
+    };
+    reader.onerror = () => {
+      setStatusMsg({ text: 'Не удалось прочитать выбранный файл', error: true });
     };
     reader.readAsText(file);
     // Reset file input
@@ -65,7 +79,14 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Управление данными и резервная копия"
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
@@ -74,6 +95,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
           >
             <X className="w-5 h-5" />
@@ -103,7 +125,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
             <button
               type="button"
               onClick={handleExport}
-              className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-750 hover:border-amber-500/50 border border-slate-700 rounded-xl text-xs font-bold text-white transition flex items-center justify-between group"
+              className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 hover:border-amber-500/50 border border-slate-700 rounded-xl text-xs font-bold text-white transition flex items-center justify-between group"
             >
               <div className="flex items-center gap-2.5">
                 <Download className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
@@ -127,7 +149,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-750 hover:border-blue-500/50 border border-slate-700 rounded-xl text-xs font-bold text-white transition flex items-center justify-between group"
+                className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 hover:border-blue-500/50 border border-slate-700 rounded-xl text-xs font-bold text-white transition flex items-center justify-between group"
               >
                 <div className="flex items-center gap-2.5">
                   <Upload className="w-4 h-4 text-blue-400 group-hover:scale-110 transition" />

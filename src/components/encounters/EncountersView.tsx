@@ -10,7 +10,6 @@ import {
   Play,
   Layers,
   MapPin,
-  Tag,
   Skull,
   Scroll,
 } from 'lucide-react';

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CreatureTemplate } from '../../types';
 import {
   findMonsterByUrlOrSlug,
   parseMonsterFromText,
-  convertCatalogMonsterToTemplate,
   extractMonsterSlugAndId,
 } from '../../utils/monsterParser';
+import { convertCatalogMonsterToTemplate } from '../../utils/catalogToTemplate';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Link as LinkIcon, FileText, CheckCircle2, Sparkles, Plus, AlertCircle, Edit3 } from 'lucide-react';
 
 interface Props {
@@ -28,7 +29,27 @@ export const ImportMonsterModal: React.FC<Props> = ({
   const [previewTemplate, setPreviewTemplate] = useState<CreatureTemplate | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
+  // Reset the form between openings; the edition may have changed in the parent tab.
+  useEffect(() => {
+    if (isOpen) {
+      setMode('url');
+      setEdition(initialEdition);
+      setInputUrl('');
+      setInputText('');
+      setPreviewTemplate(null);
+      setStatusMessage(null);
+    }
+  }, [isOpen, initialEdition]);
+
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen) return null;
+
+  const handleEditionChange = (nextEdition: '5e14' | '5e24') => {
+    setEdition(nextEdition);
+    setPreviewTemplate(null);
+    setStatusMessage(null);
+  };
 
   const handleParseUrl = () => {
     setStatusMessage(null);
@@ -64,6 +85,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
 
     // 2. Extract clean slug without numeric ID prefix (e.g. 21205-banshee -> Banshee)
     const { rawName } = extractMonsterSlugAndId(trimmed);
+    const safeSourceUrl = /^https?:\/\//i.test(trimmed) ? trimmed : undefined;
 
     // Fallback template
     const tpl: CreatureTemplate = {
@@ -74,11 +96,11 @@ export const ImportMonsterModal: React.FC<Props> = ({
       maxHp: 10,
       armorClass: 12,
       initiativeModifier: 0,
-      tags: [activeEdition, 'Бестиарий D&D'],
-      notes: `Источник: ${trimmed}\nРедакция: ${activeEdition === '5e24' ? 'D&D 5e (2024)' : 'D&D 5e (2014)'}`,
+      tags: [activeEdition, 'Бестиарий D&D', 'Черновик'],
+      notes: `Источник: ${trimmed}\nРедакция: ${activeEdition === '5e24' ? 'D&D 5e (2024)' : 'D&D 5e (2014)'}\n\n⚠️ Проверьте характеристики вручную.`,
       cr: undefined,
       edition: activeEdition,
-      sourceUrl: trimmed,
+      sourceUrl: safeSourceUrl,
       sourceLabel: activeEdition === '5e24' ? 'next.dnd.su (5e24)' : '5e14.dnd.su (5e14)',
       createdAt: Date.now(),
     };
@@ -133,7 +155,14 @@ export const ImportMonsterModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Импорт существа с dnd.su"
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
@@ -151,6 +180,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
@@ -199,7 +229,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setEdition('5e24')}
+                onClick={() => handleEditionChange('5e24')}
                 className={`p-2.5 rounded-xl border text-left transition ${
                   edition === '5e24'
                     ? 'border-emerald-500/80 bg-emerald-950/40 text-emerald-300 ring-2 ring-emerald-500/40'
@@ -212,7 +242,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
 
               <button
                 type="button"
-                onClick={() => setEdition('5e14')}
+                onClick={() => handleEditionChange('5e14')}
                 className={`p-2.5 rounded-xl border text-left transition ${
                   edition === '5e14'
                     ? 'border-indigo-500/80 bg-indigo-950/40 text-indigo-300 ring-2 ring-indigo-500/40'

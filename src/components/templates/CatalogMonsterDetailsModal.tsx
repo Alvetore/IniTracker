@@ -1,5 +1,6 @@
 import React from 'react';
 import { CatalogMonster } from '../../types/bestiary';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, ExternalLink, Plus, Shield, Heart, Zap, Footprints, Skull, BookOpen, Swords } from 'lucide-react';
 
 interface Props {
@@ -19,6 +20,8 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
   onAddToCombat,
   isAlreadyAdded = false,
 }) => {
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen || !monster) return null;
 
   const is5e24 = monster.edition === '5e24';
@@ -37,7 +40,14 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Существо: ${monster.name}`}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-start justify-between px-4 sm:px-6 py-4 border-b border-slate-800 bg-slate-900/90">
           <div>
@@ -65,6 +75,7 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
 
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition ml-2"
             title="Закрыть"
           >
@@ -217,6 +228,22 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
                   <div key={idx} className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60">
                     <strong className="text-white block mb-0.5">{react.name}.</strong>
                     <span className="text-slate-300">{react.description}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {monster.legendaryActions && monster.legendaryActions.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300 border-b border-slate-800 pb-1">
+                Легендарные действия
+              </h4>
+              <div className="space-y-2 text-xs">
+                {monster.legendaryActions.map((action, idx) => (
+                  <div key={idx} className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60">
+                    <strong className="text-white block mb-0.5">{action.name}.</strong>
+                    <span className="text-slate-300">{action.description}</span>
                   </div>
                 ))}
               </div>

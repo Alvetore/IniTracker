@@ -3,7 +3,7 @@ import { CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { CatalogMonster, BestiarySection } from '../../types/bestiary';
 import { BESTIARY_5E14 } from '../../data/bestiary5e14';
 import { BESTIARY_5E24 } from '../../data/bestiary5e24';
-import { convertCatalogMonsterToTemplate } from '../../utils/monsterParser';
+import { convertCatalogMonsterToTemplate } from '../../utils/catalogToTemplate';
 import { TemplateFormModal } from './TemplateFormModal';
 import { CatalogMonsterDetailsModal } from './CatalogMonsterDetailsModal';
 import { ImportMonsterModal } from './ImportMonsterModal';
@@ -22,9 +22,7 @@ import {
   ExternalLink,
   Info,
   Check,
-  BookOpen,
   Sparkles,
-  Layers,
   Filter,
   Swords,
 } from 'lucide-react';
@@ -797,6 +795,12 @@ export const TemplatesView: React.FC<Props> = ({
                 <option value="Монстр">Монстр</option>
                 <option value="Аберрация">Аберрация</option>
                 <option value="Слизь">Слизь</option>
+                <option value="Фея">Фея</option>
+                <option value="Исчадие">Исчадие</option>
+                <option value="Элементаль">Элементаль</option>
+                <option value="Конструкт">Конструкт</option>
+                <option value="Растение">Растение</option>
+                <option value="Небожитель">Небожитель</option>
               </select>
             </div>
           </div>
@@ -823,7 +827,9 @@ export const TemplatesView: React.FC<Props> = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredCatalogMonsters.map((monster) => {
-                const isAdded = addedMonsterIds.has(monster.id);
+                const isAdded =
+                  addedMonsterIds.has(monster.id) ||
+                  templates.some((template) => template.sourceUrl === monster.sourceUrl);
                 const initSign =
                   monster.initiativeModifier >= 0
                     ? `+${monster.initiativeModifier}`
@@ -961,7 +967,13 @@ export const TemplatesView: React.FC<Props> = ({
 
                       <button
                         onClick={() => handleAddMonsterToPersonal(monster)}
-                        className={`flex-1 py-2 px-2.5 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md ${
+                        disabled={isAdded}
+                        title={
+                          isAdded
+                            ? 'Уже добавлено. Откройте карточку, чтобы добавить копию'
+                            : 'Добавить в личный бестиарий'
+                        }
+                        className={`flex-1 py-2 px-2.5 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md disabled:cursor-default ${
                           isAdded
                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
                             : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
@@ -1005,7 +1017,12 @@ export const TemplatesView: React.FC<Props> = ({
         onClose={() => setIsInspectModalOpen(false)}
         onAddToPersonal={handleAddMonsterToPersonal}
         onAddToCombat={canAddToCombat ? handleAddCatalogMonsterToCombat : undefined}
-        isAlreadyAdded={inspectingMonster ? addedMonsterIds.has(inspectingMonster.id) : false}
+        isAlreadyAdded={
+          inspectingMonster
+            ? addedMonsterIds.has(inspectingMonster.id) ||
+              templates.some((template) => template.sourceUrl === inspectingMonster.sourceUrl)
+            : false
+        }
       />
 
       {/* 3. Import Monster Modal (URL / Text) */}

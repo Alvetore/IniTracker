@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Combatant } from '../../types';
-import { X, Heart, ShieldAlert, Sparkles, Plus, Minus, Check } from 'lucide-react';
+import { Combatant, CombatLogEntry } from '../../types';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
+import { X, Heart, Plus, Minus, Check } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -10,7 +11,8 @@ interface Props {
     combatantId: string,
     newCurrentHp: number,
     newTempHp: number,
-    logMsg: string
+    logMsg: string,
+    logType?: CombatLogEntry['type']
   ) => void;
 }
 
@@ -27,6 +29,8 @@ export const HpAdjustModal: React.FC<Props> = ({
     setAmount('');
     setLastDeltaMessage(null);
   }, [isOpen, combatant?.id]);
+
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
 
   if (!isOpen || !combatant) return null;
 
@@ -65,7 +69,7 @@ export const HpAdjustModal: React.FC<Props> = ({
     const multText = mult === 0.5 ? ' (половина урона)' : mult === 2 ? ' (крит x2)' : '';
     const logMsg = `${combatant.name} получил ${actualDmg} урона${multText}. HP: ${newHp}/${maxHp}`;
 
-    onApplyHpChange(combatant.id, newHp, newTemp, logMsg);
+    onApplyHpChange(combatant.id, newHp, newTemp, logMsg, 'damage');
     onClose();
   };
 
@@ -77,7 +81,7 @@ export const HpAdjustModal: React.FC<Props> = ({
     const actualHealed = newHp - currentHp;
     const logMsg = `${combatant.name} восстановил ${actualHealed} HP. HP: ${newHp}/${maxHp}`;
 
-    onApplyHpChange(combatant.id, newHp, tempHp, logMsg);
+    onApplyHpChange(combatant.id, newHp, tempHp, logMsg, 'heal');
     onClose();
   };
 
@@ -86,7 +90,7 @@ export const HpAdjustModal: React.FC<Props> = ({
     if (isNaN(parsed) || parsed < 0) return;
 
     const logMsg = `${combatant.name} получил ${parsed} временных HP.`;
-    onApplyHpChange(combatant.id, currentHp, parsed, logMsg);
+    onApplyHpChange(combatant.id, currentHp, parsed, logMsg, 'system');
     onClose();
   };
 
@@ -108,14 +112,14 @@ export const HpAdjustModal: React.FC<Props> = ({
 
       newHp = Math.max(0, newHp - remainingDmg);
       const logMsg = `${combatant.name} получил ${Math.abs(delta)} урона. HP: ${newHp}/${maxHp}`;
-      onApplyHpChange(combatant.id, newHp, newTemp, logMsg);
+      onApplyHpChange(combatant.id, newHp, newTemp, logMsg, 'damage');
 
       setLastDeltaMessage({ text: `-${Math.abs(delta)} HP`, isNegative: true });
     } else {
       const newHp = Math.min(maxHp, currentHp + delta);
       const actualHealed = newHp - currentHp;
       const logMsg = `${combatant.name} восстановил ${actualHealed} HP. HP: ${newHp}/${maxHp}`;
-      onApplyHpChange(combatant.id, newHp, tempHp, logMsg);
+      onApplyHpChange(combatant.id, newHp, tempHp, logMsg, 'heal');
 
       setLastDeltaMessage({ text: `+${actualHealed} HP`, isNegative: false });
     }
@@ -123,7 +127,14 @@ export const HpAdjustModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Здоровье: ${combatant.name}`}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden focus:outline-none"
+      >
         {/* Header */}
         <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90 space-y-2">
           <div className="flex items-center justify-between">
@@ -153,6 +164,7 @@ export const HpAdjustModal: React.FC<Props> = ({
             </div>
             <button
               onClick={onClose}
+              aria-label="Закрыть"
               className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
             >
               <X className="w-5 h-5" />
@@ -291,7 +303,7 @@ export const HpAdjustModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
+              className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
             >
               <Check className="w-4 h-4 text-emerald-400" />
               Готово / Закрыть

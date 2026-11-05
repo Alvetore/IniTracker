@@ -5,6 +5,7 @@ import {
   CreatureTemplate,
   CreatureType,
 } from '../../types';
+import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import {
   X,
   Plus,
@@ -49,7 +50,7 @@ export const EncounterFormModal: React.FC<Props> = ({
       setDescription(initialEncounter.description || '');
       setDifficulty(initialEncounter.difficulty || 'medium');
       setTags([...initialEncounter.tags]);
-      setMonsters([...initialEncounter.monsters]);
+      setMonsters(initialEncounter.monsters.map((monster) => ({ ...monster })));
     } else {
       setTitle('');
       setLocation('');
@@ -62,6 +63,8 @@ export const EncounterFormModal: React.FC<Props> = ({
     setError('');
   }, [initialEncounter, isOpen, templates]);
 
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
+
   if (!isOpen) return null;
 
   // Add monster from template
@@ -73,9 +76,12 @@ export const EncounterFormModal: React.FC<Props> = ({
     // Check if monster with same template already exists in encounter
     const existingIndex = monsters.findIndex((m) => m.templateId === tpl.id);
     if (existingIndex !== -1) {
-      const updated = [...monsters];
-      updated[existingIndex].count += 1;
-      setMonsters(updated);
+      const existingId = monsters[existingIndex].id;
+      setMonsters(
+        monsters.map((monster) =>
+          monster.id === existingId ? { ...monster, count: monster.count + 1 } : monster
+        )
+      );
       return;
     }
 
@@ -167,7 +173,14 @@ export const EncounterFormModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={initialEncounter ? 'Редактировать энкаунтер' : 'Создать новый энкаунтер'}
+        tabIndex={-1}
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto focus:outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
@@ -185,6 +198,7 @@ export const EncounterFormModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
@@ -317,7 +331,7 @@ export const EncounterFormModal: React.FC<Props> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Гоблины стреляют с уступов; при потере половины сбегают в пещеру; сундук заминирован..."
-              className="w-full bg-slate-850 bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs font-mono"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs font-mono"
             />
           </div>
 
@@ -392,7 +406,7 @@ export const EncounterFormModal: React.FC<Props> = ({
                           onChange={(e) =>
                             handleUpdateMonster(monster.id, { type: e.target.value as CreatureType })
                           }
-                          className="bg-slate-900 border border-slate-850 rounded px-1.5 py-0.5 text-[10px] text-slate-300"
+                          className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-[10px] text-slate-300"
                         >
                           <option value="enemy">Враг</option>
                           <option value="ally">Союзник</option>
