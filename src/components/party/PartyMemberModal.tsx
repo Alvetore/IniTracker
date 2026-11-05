@@ -189,7 +189,7 @@ export const PartyMemberModal: React.FC<Props> = ({
             <div>
               <label
                 className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 mb-1"
-                title="Синхронизируется с активным боем (кроме случаев, когда в бою несколько копий героя)"
+                title="Синхронизируется с боем, пока все копии героя в бою имеют одинаковый HP"
               >
                 <Heart className="w-3 h-3" /> Тек. HP
               </label>

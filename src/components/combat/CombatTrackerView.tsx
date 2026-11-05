@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ActiveCombatState,
   Combatant,
@@ -49,15 +49,6 @@ interface Props {
   encounters: Encounter[];
 }
 
-interface TurnAdvanceSnapshot {
-  fromCombatantId?: string;
-  toCombatantId: string;
-  fromRound: number;
-  toRound: number;
-  conditionsBefore: Condition[];
-  delayedClearedId?: string;
-}
-
 export const CombatTrackerView: React.FC<Props> = ({
   combatState,
   onUpdateCombatState,
@@ -82,9 +73,6 @@ export const CombatTrackerView: React.FC<Props> = ({
   const [showLog, setShowLog] = useState(false);
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null);
 
-  // Last turn transitions, used by "previous turn" to undo condition ticks.
-  const turnHistoryRef = useRef<TurnAdvanceSnapshot[]>([]);
-
   // Spacebar shortcut to advance turn
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -93,7 +81,7 @@ export const CombatTrackerView: React.FC<Props> = ({
       if (
         ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) ||
         target.isContentEditable ||
-        target.closest('[role="dialog"]')
+        Boolean(target.closest?.('[role="dialog"]'))
       ) {
         return;
       }
@@ -288,7 +276,6 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handleStartCombat = () => {
     if (!combatState || combatState.combatants.length === 0) return;
 
-    turnHistoryRef.current = [];
     const { sortedCombatants } = sortCombatantsPreservingTurn(combatState.combatants, 0, false);
     const firstTurn = findNextTurn(sortedCombatants, -1);
     const firstTurnIndex = firstTurn?.index ?? 0;
@@ -312,6 +299,7 @@ export const CombatTrackerView: React.FC<Props> = ({
       currentTurnIndex: firstTurnIndex,
       combatants: sortedCombatants,
       log: newLog,
+      turnHistory: [],
     });
   };
 
@@ -426,17 +414,17 @@ export const CombatTrackerView: React.FC<Props> = ({
     }
     const turnMsg = `Ход перешел к: ${nextCombatant.name} (Инициатива ${nextCombatant.initiative})${delayCompleted ? ' — задержка завершена' : ''}`;
 
-    turnHistoryRef.current.push({
-      fromCombatantId: currentCombatant?.id,
-      toCombatantId: nextCombatant.id,
-      fromRound: combatState.round,
-      toRound: nextRound,
-      conditionsBefore,
-      delayedClearedId: delayCompleted ? nextCombatant.id : undefined,
-    });
-    if (turnHistoryRef.current.length > 50) {
-      turnHistoryRef.current.shift();
-    }
+    const turnHistory = [
+      ...(combatState.turnHistory ?? []),
+      {
+        fromCombatantId: currentCombatant?.id,
+        toCombatantId: nextCombatant.id,
+        fromRound: combatState.round,
+        toRound: nextRound,
+        conditionsBefore,
+        delayedClearedId: delayCompleted ? nextCombatant.id : undefined,
+      },
+    ].slice(-50);
 
     const logsToAdd: CombatLogEntry[] = [];
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -464,6 +452,7 @@ export const CombatTrackerView: React.FC<Props> = ({
       currentTurnIndex: nextIndex,
       combatants: updatedCombatants,
       log: [...logsToAdd, ...combatState.log.slice(0, 48)],
+      turnHistory,
     });
   };
 
@@ -471,7 +460,8 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handlePrevTurn = () => {
     if (!combatState || combatState.combatants.length === 0) return;
 
-    const snapshot = turnHistoryRef.current[turnHistoryRef.current.length - 1];
+    const history = combatState.turnHistory ?? [];
+    const snapshot = history[history.length - 1];
     const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
 
     if (
@@ -479,8 +469,6 @@ export const CombatTrackerView: React.FC<Props> = ({
       currentCombatant?.id === snapshot.toCombatantId &&
       combatState.round === snapshot.toRound
     ) {
-      turnHistoryRef.current.pop();
-
       const restoredCombatants = combatState.combatants.map((combatant) => {
         let restored = combatant;
         if (snapshot.fromCombatantId && combatant.id === snapshot.fromCombatantId) {
@@ -507,6 +495,7 @@ export const CombatTrackerView: React.FC<Props> = ({
             ? restoredIndex
             : Math.max(0, combatState.currentTurnIndex - 1),
         combatants: restoredCombatants,
+        turnHistory: history.slice(0, -1),
       });
       return;
     }
@@ -530,12 +519,12 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handleResetCombat = () => {
     if (confirm('Сбросить текущий бой и вернуть порядок в режим подготовки?')) {
       if (combatState) {
-        turnHistoryRef.current = [];
         onUpdateCombatState({
           ...combatState,
           isActive: false,
           round: 1,
           currentTurnIndex: 0,
+          turnHistory: [],
         });
       }
     }
@@ -544,7 +533,6 @@ export const CombatTrackerView: React.FC<Props> = ({
   // Clear all combatants
   const handleClearCombatants = () => {
     if (confirm('Очистить список участников боя?')) {
-      turnHistoryRef.current = [];
       onUpdateCombatState(null);
     }
   };

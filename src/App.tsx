@@ -16,6 +16,7 @@ import { AddToCombatOptions } from './components/combat/AddToCombatModal';
 import { CatalogMonster } from './types/bestiary';
 import { convertCatalogMonsterToTemplate } from './utils/catalogToTemplate';
 import { sortCombatantsPreservingTurn } from './utils/combatUtils';
+import { syncPartyHpWithCombat } from './utils/partySync';
 import { THEMES, ThemeId } from './types/theme';
 
 const TemplatesView = lazy(() =>
@@ -78,6 +79,30 @@ export const App: React.FC = () => {
     loadAllData();
   }, []);
 
+  // Keep multiple open tabs in sync. The storage event is only fired in other tabs.
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'ttrpg_theme_v1' && event.newValue) {
+        if (THEMES.some((theme) => theme.id === event.newValue)) {
+          setCurrentTheme((previous) =>
+            previous === event.newValue ? previous : (event.newValue as ThemeId)
+          );
+        }
+        return;
+      }
+
+      if (!event.key || !event.key.startsWith('dnd_init_')) return;
+
+      setTemplates(Storage.getTemplates());
+      setParty(Storage.getParty());
+      setEncounters(Storage.getEncounters());
+      setCombatState(Storage.getCombatState());
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   // Sync to Storage on changes
   const handleSaveTemplates = (newTemplates: CreatureTemplate[]) => {
     setTemplates(newTemplates);
@@ -102,28 +127,11 @@ export const App: React.FC = () => {
     setCombatState(normalizedState);
     Storage.saveCombatState(normalizedState);
 
-    // A party member's card follows the HP of its single combatant instance.
-    // Copies are ambiguous, so they are left untouched.
+    // A party member's card follows the HP of its combatant instances.
     if (normalizedState) {
-      const byPartyMember = new Map<string, Combatant[]>();
-      normalizedState.combatants.forEach((combatant) => {
-        if (!combatant.sourcePartyMemberId) return;
-        const list = byPartyMember.get(combatant.sourcePartyMemberId) ?? [];
-        list.push(combatant);
-        byPartyMember.set(combatant.sourcePartyMemberId, list);
-      });
-
       setParty((currentParty) => {
-        let changed = false;
-        const updatedParty = currentParty.map((member) => {
-          const instances = byPartyMember.get(member.id);
-          if (!instances || instances.length !== 1) return member;
-          const nextHp = Math.min(member.maxHp, Math.max(0, instances[0].hp.current));
-          if (member.currentHp === nextHp) return member;
-          changed = true;
-          return { ...member, currentHp: nextHp };
-        });
-        if (!changed) return currentParty;
+        const updatedParty = syncPartyHpWithCombat(currentParty, normalizedState.combatants);
+        if (!updatedParty) return currentParty;
         Storage.saveParty(updatedParty);
         return updatedParty;
       });
@@ -321,6 +329,7 @@ export const App: React.FC = () => {
       diceSystem,
       encounterTitle: enc.title,
       encounterId: enc.id,
+      turnHistory: [],
     };
 
     handleUpdateCombatState(newCombatState);

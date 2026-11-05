@@ -295,6 +295,31 @@ function validateCombatants(value: unknown, errors: string[]): void {
   });
 }
 
+function validateTurnHistory(value: unknown, errors: string[]): void {
+  if (!Array.isArray(value)) {
+    pushError(errors, 'activeCombat.turnHistory', 'ожидался массив');
+    return;
+  }
+
+  value.forEach((entry, index) => {
+    const path = `activeCombat.turnHistory[${index}]`;
+    if (!isObject(entry)) {
+      pushError(errors, path, 'ожидался объект');
+      return;
+    }
+    optionalString(entry.fromCombatantId, `${path}.fromCombatantId`, errors);
+    requireString(entry.toCombatantId, `${path}.toCombatantId`, errors);
+    if (!isFiniteNumber(entry.fromRound)) {
+      pushError(errors, `${path}.fromRound`, 'ожидалось число');
+    }
+    if (!isFiniteNumber(entry.toRound)) {
+      pushError(errors, `${path}.toRound`, 'ожидалось число');
+    }
+    validateConditions(entry.conditionsBefore, `${path}.conditionsBefore`, errors);
+    optionalString(entry.delayedClearedId, `${path}.delayedClearedId`, errors);
+  });
+}
+
 function validateActiveCombat(value: unknown, errors: string[]): void {
   if (!isObject(value)) {
     pushError(errors, 'activeCombat', 'ожидался объект');
@@ -317,6 +342,9 @@ function validateActiveCombat(value: unknown, errors: string[]): void {
   optionalString(value.encounterId, 'activeCombat.encounterId', errors);
   validateCombatants(value.combatants, errors);
   validateLog(value.log, errors);
+  if (value.turnHistory !== undefined) {
+    validateTurnHistory(value.turnHistory, errors);
+  }
 }
 
 /**

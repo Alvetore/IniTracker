@@ -8,6 +8,15 @@ export interface Condition {
   notes?: string;
 }
 
+export interface TurnHistoryEntry {
+  fromCombatantId?: string;
+  toCombatantId: string;
+  fromRound: number;
+  toRound: number;
+  conditionsBefore: Condition[];
+  delayedClearedId?: string;
+}
+
 export interface CreatureTemplate {
   id: string;
   name: string;
@@ -101,6 +110,7 @@ export interface ActiveCombatState {
   diceSystem: DiceSystem;
   encounterTitle?: string;
   encounterId?: string;
+  turnHistory?: TurnHistoryEntry[];
 }
 
 export interface AppDataExport {
