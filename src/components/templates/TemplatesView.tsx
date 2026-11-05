@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { CatalogMonster, BestiarySection } from '../../types/bestiary';
 import { BESTIARY_5E14 } from '../../data/bestiary5e14';
@@ -60,6 +60,11 @@ export const TemplatesView: React.FC<Props> = ({
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogCrFilter, setCatalogCrFilter] = useState<string>('all');
   const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<string>('all');
+  const [catalogLimit, setCatalogLimit] = useState(48);
+
+  useEffect(() => {
+    setCatalogLimit(48);
+  }, [activeSection, catalogSearch, catalogCrFilter, catalogCategoryFilter]);
 
   // Modals state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -825,8 +830,9 @@ export const TemplatesView: React.FC<Props> = ({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCatalogMonsters.map((monster) => {
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredCatalogMonsters.slice(0, catalogLimit).map((monster) => {
                 const isAdded =
                   addedMonsterIds.has(monster.id) ||
                   templates.some((template) => template.sourceUrl === monster.sourceUrl);
@@ -996,6 +1002,18 @@ export const TemplatesView: React.FC<Props> = ({
                 );
               })}
             </div>
+            {filteredCatalogMonsters.length > catalogLimit && (
+              <div className="flex justify-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCatalogLimit((previous) => previous + 48)}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition"
+                >
+                  Показать ещё ({filteredCatalogMonsters.length - catalogLimit} из {filteredCatalogMonsters.length})
+                </button>
+              </div>
+            )}
+            </>
           )}
         </div>
       )}

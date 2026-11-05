@@ -30,9 +30,9 @@ describe('findMonsterByUrlOrSlug', () => {
   });
 
   it('marks dictionary matches as approximate', () => {
-    const result = findMonsterByUrlOrSlug('https://5e14.dnd.su/bestiary/1-aboleth/');
+    const result = findMonsterByUrlOrSlug('https://5e14.dnd.su/bestiary/191-minotaur/');
     expect(result?.source).toBe('dictionary');
-    expect(result?.monster.name).toBe('Аболет');
+    expect(result?.monster.name).toBe('Минотавр');
     expect(result?.monster.sourceLabel).toContain('словарь');
   });
 
