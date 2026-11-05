@@ -69,7 +69,7 @@ npm run build
 ```bash
 npm run typecheck   # проверка TypeScript
 npm run lint        # ESLint
-npm test            # модульные тесты (Vitest)
+npm test            # unit- и UI-тесты (Vitest + Testing Library)
 ```
 Эти же шаги выполняются в GitHub Actions перед сборкой.
 

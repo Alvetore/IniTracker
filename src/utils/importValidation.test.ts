@@ -67,6 +67,14 @@ const validPayload = {
       },
     ],
     log: [],
+    turnHistory: [] as Array<{
+      fromCombatantId?: string;
+      toCombatantId: string;
+      fromRound: number;
+      toRound: number;
+      conditionsBefore: unknown[];
+      delayedClearedId?: string;
+    }>,
   },
 };
 
@@ -97,6 +105,34 @@ describe('validateImportData', () => {
     payload.templates[0].sourceUrl = 'javascript:alert(1)';
     const errors = validateImportData(payload);
     expect(errors).toContain('templates[0].sourceUrl: ожидалась http(s)-ссылка');
+  });
+
+  it('validates persisted turn history', () => {
+    const valid = structuredClone(validPayload);
+    valid.activeCombat.turnHistory = [
+      {
+        fromCombatantId: 'c-1',
+        toCombatantId: 'c-1',
+        fromRound: 1,
+        toRound: 2,
+        conditionsBefore: [],
+      },
+    ];
+    expect(validateImportData(valid)).toEqual([]);
+
+    const invalid = structuredClone(valid);
+    invalid.activeCombat.turnHistory = [
+      {
+        fromCombatantId: 'c-1',
+        toCombatantId: 'c-1',
+        fromRound: 1,
+        toRound: 2,
+        conditionsBefore: 'not-an-array' as never,
+      },
+    ];
+    expect(validateImportData(invalid)).toContain(
+      'activeCombat.turnHistory[0].conditionsBefore: ожидался массив'
+    );
   });
 
   it('rejects a non-object root', () => {
