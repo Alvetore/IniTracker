@@ -411,7 +411,10 @@ export const App: React.FC = () => {
       id: `hero-${hero.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: hero.name,
       type: 'player',
-      initiative: hero.initiativeModifier,
+      initiative:
+        state.isActive && state.diceSystem !== 'manual'
+          ? rollInitiativeForSystem(state.diceSystem, hero.initiativeModifier).total
+          : hero.initiativeModifier,
       initiativeModifier: hero.initiativeModifier,
       hp: {
         current: hero.currentHp,

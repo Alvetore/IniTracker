@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PartyMember, Combatant } from '../../types';
 import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Users, UserPlus, Check, Shield, Heart, Zap } from 'lucide-react';
@@ -23,6 +23,10 @@ export const PartySelectionModal: React.FC<Props> = ({
 
   // Selected for batch add
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isOpen) setSelectedIds([]);
+  }, [isOpen]);
 
   const dialogRef = useDialogAccessibility(isOpen, onClose);
 

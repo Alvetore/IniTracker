@@ -58,20 +58,24 @@ export const EditCombatantModal: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const safeMaxHp = Math.max(1, maxHp);
+    const safeCurrentHp = Math.max(0, Math.min(currentHp, safeMaxHp));
+    const safeArmorClass =
+      typeof armorClass === 'number' ? armorClass : armorClass.trim() || '10';
     onSave(combatant.id, {
       name: name.trim() || combatant.name,
       type,
       initiative,
       initiativeModifier,
-      armorClass: typeof armorClass === 'number' ? armorClass : parseInt(String(armorClass)) || 10,
+      armorClass: safeArmorClass,
       hp: {
-        current: currentHp,
-        max: Math.max(1, maxHp),
+        current: safeCurrentHp,
+        max: safeMaxHp,
         temp: Math.max(0, tempHp),
       },
       notes,
       isDelayed,
-      isDefeated: currentHp <= 0 ? true : isDefeated,
+      isDefeated: safeCurrentHp <= 0 ? true : isDefeated,
     });
     onClose();
   };
@@ -122,6 +126,7 @@ export const EditCombatantModal: React.FC<Props> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                aria-label="Имя участника"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -179,6 +184,7 @@ export const EditCombatantModal: React.FC<Props> = ({
                     type="number"
                     value={initiative}
                     onChange={(e) => setInitiative(parseInt(e.target.value) || 0)}
+                    aria-label="Текущая инициатива"
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-amber-500"
                   />
                   <button
@@ -200,6 +206,7 @@ export const EditCombatantModal: React.FC<Props> = ({
                   type="number"
                   value={initiativeModifier}
                   onChange={(e) => setInitiativeModifier(parseInt(e.target.value) || 0)}
+                  aria-label="Модификатор инициативы"
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-sm font-semibold text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
@@ -216,6 +223,7 @@ export const EditCombatantModal: React.FC<Props> = ({
                 type="number"
                 value={currentHp}
                 onChange={(e) => setCurrentHp(parseInt(e.target.value) || 0)}
+                aria-label="Текущие HP"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 text-center font-bold text-white text-sm focus:outline-none focus:border-rose-500"
               />
             </div>
@@ -229,6 +237,7 @@ export const EditCombatantModal: React.FC<Props> = ({
                 value={maxHp}
                 min="1"
                 onChange={(e) => setMaxHp(parseInt(e.target.value) || 1)}
+                aria-label="Максимальные HP"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 text-center font-bold text-white text-sm focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -241,6 +250,7 @@ export const EditCombatantModal: React.FC<Props> = ({
                 type="text"
                 value={armorClass}
                 onChange={(e) => setArmorClass(e.target.value)}
+                aria-label="Класс доспеха"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 text-center font-bold text-white text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -255,6 +265,7 @@ export const EditCombatantModal: React.FC<Props> = ({
                 value={tempHp}
                 min="0"
                 onChange={(e) => setTempHp(Math.max(0, parseInt(e.target.value) || 0))}
+                aria-label="Временные HP"
                 className="w-full bg-transparent text-center font-bold text-white text-xs focus:outline-none"
               />
             </div>

@@ -10,7 +10,7 @@ import {
   DiceSystem,
 } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
-import { sortCombatantsPreservingTurn, findNextTurn } from '../../utils/combatUtils';
+import { sortCombatantsPreservingTurn, findNextTurn, isCombatantEligibleForTurn } from '../../utils/combatUtils';
 import { ConditionPickerModal } from './ConditionPickerModal';
 import { HpAdjustModal } from './HpAdjustModal';
 import { AddCombatantModal } from './AddCombatantModal';
@@ -117,11 +117,15 @@ export const CombatTrackerView: React.FC<Props> = ({
     const newCombatants: Combatant[] = [];
 
     membersToAdd.forEach((hero) => {
+      const initiative =
+        state.isActive && state.diceSystem !== 'manual'
+          ? rollInitiativeForSystem(state.diceSystem, hero.initiativeModifier).total
+          : hero.initiativeModifier;
       newCombatants.push({
         id: `hero-${hero.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         name: hero.name,
         type: 'player',
-        initiative: hero.initiativeModifier,
+        initiative,
         initiativeModifier: hero.initiativeModifier,
         hp: {
           current: hero.currentHp,
@@ -277,9 +281,13 @@ export const CombatTrackerView: React.FC<Props> = ({
     if (!combatState || combatState.combatants.length === 0) return;
 
     const { sortedCombatants } = sortCombatantsPreservingTurn(combatState.combatants, 0, false);
-    const firstTurn = findNextTurn(sortedCombatants, -1);
-    const firstTurnIndex = firstTurn?.index ?? 0;
-    const firstCombatant = sortedCombatants[firstTurnIndex];
+    const preparedCombatants = sortedCombatants.map((combatant) =>
+      combatant.isDelayed ? { ...combatant, isDelayed: false } : combatant
+    );
+    const firstTurn = findNextTurn(preparedCombatants, -1);
+    if (!firstTurn) return;
+    const firstTurnIndex = firstTurn.index;
+    const firstCombatant = preparedCombatants[firstTurnIndex];
 
     const newLog = [
       {
@@ -297,7 +305,7 @@ export const CombatTrackerView: React.FC<Props> = ({
       isActive: true,
       round: 1,
       currentTurnIndex: firstTurnIndex,
-      combatants: sortedCombatants,
+      combatants: preparedCombatants,
       log: newLog,
       turnHistory: [],
     });
@@ -524,6 +532,9 @@ export const CombatTrackerView: React.FC<Props> = ({
           isActive: false,
           round: 1,
           currentTurnIndex: 0,
+          combatants: combatState.combatants.map((combatant) =>
+            combatant.isDelayed ? { ...combatant, isDelayed: false } : combatant
+          ),
           turnHistory: [],
         });
       }
@@ -568,7 +579,21 @@ export const CombatTrackerView: React.FC<Props> = ({
     const updated = combatState.combatants.filter((c) => c.id !== id);
 
     let nextTurnIndex = combatState.currentTurnIndex;
-    if (idx < combatState.currentTurnIndex) {
+    let nextRound = combatState.round;
+    if (updated.length === 0) {
+      nextTurnIndex = 0;
+      nextRound = 1;
+    } else if (combatState.isActive && idx === combatState.currentTurnIndex) {
+      // Removing the active combatant passes the turn to the next eligible
+      // participant, skipping defeated NPCs and wrapping the round if needed.
+      const next = findNextTurn(updated, idx - 1);
+      if (next) {
+        nextTurnIndex = next.index;
+        nextRound += next.roundIncrement;
+      } else {
+        nextTurnIndex = 0;
+      }
+    } else if (idx < combatState.currentTurnIndex) {
       nextTurnIndex = Math.max(0, nextTurnIndex - 1);
     } else if (nextTurnIndex >= updated.length) {
       nextTurnIndex = 0;
@@ -577,9 +602,9 @@ export const CombatTrackerView: React.FC<Props> = ({
     onUpdateCombatState({
       ...combatState,
       isActive: updated.length === 0 ? false : combatState.isActive,
-      round: updated.length === 0 ? 1 : combatState.round,
+      round: nextRound,
       combatants: updated,
-      currentTurnIndex: updated.length === 0 ? 0 : nextTurnIndex,
+      currentTurnIndex: nextTurnIndex,
     });
   };
 
@@ -629,7 +654,19 @@ export const CombatTrackerView: React.FC<Props> = ({
 
     let nextTurnIndex: number;
     if (activeId === combatantId) {
-      nextTurnIndex = fromIndex < reordered.length ? fromIndex : 0;
+      const movedIndex = reordered.length - 1;
+      const nextEligible = reordered.findIndex(
+        (combatant, index) =>
+          index >= fromIndex && index < movedIndex && isCombatantEligibleForTurn(combatant)
+      );
+      if (nextEligible !== -1) {
+        nextTurnIndex = nextEligible;
+      } else {
+        // Nobody else can act before the delayed combatant. Keep the turn on
+        // them and clear the marker so it cannot stay stuck forever.
+        nextTurnIndex = movedIndex;
+        reordered[movedIndex] = { ...reordered[movedIndex], isDelayed: false };
+      }
     } else {
       const activeIndex = reordered.findIndex((c) => c.id === activeId);
       nextTurnIndex =
@@ -808,6 +845,7 @@ export const CombatTrackerView: React.FC<Props> = ({
   };
 
   const combatants = combatState ? combatState.combatants : [];
+  const hasEligibleCombatant = combatants.some(isCombatantEligibleForTurn);
   const currentActive =
     combatState && combatState.isActive && combatants.length > 0
       ? combatants[combatState.currentTurnIndex]
@@ -1040,7 +1078,9 @@ export const CombatTrackerView: React.FC<Props> = ({
           <div className="pt-3 border-t border-slate-800 flex items-center justify-end">
             <button
               onClick={handleStartCombat}
-              className="w-full sm:w-auto py-3 px-6 sm:px-8 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-2 transform active:scale-95"
+              disabled={!hasEligibleCombatant}
+              title={hasEligibleCombatant ? undefined : 'Все участники повержены — некому начинать бой'}
+              className="w-full sm:w-auto py-3 px-6 sm:px-8 bg-amber-500 hover:bg-amber-400 disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed text-slate-950 font-extrabold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-2 transform active:scale-95"
             >
               <Play className="w-5 h-5 fill-current" />
               НАЧАТЬ БОЙ (РАУНД 1)
@@ -1363,8 +1403,8 @@ export const CombatTrackerView: React.FC<Props> = ({
                             title={cond.notes || undefined}
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] border font-medium"
                             style={{
-                              borderColor: `${cond.color}60`,
-                              backgroundColor: `${cond.color}20`,
+                              borderColor: `${cond.color || '#8b5cf6'}60`,
+                              backgroundColor: `${cond.color || '#8b5cf6'}20`,
                               color: cond.color || '#cbd5e1',
                             }}
                           >

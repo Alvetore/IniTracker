@@ -61,6 +61,34 @@ describe('App integration', () => {
     expect(await screen.findByText('16/21')).toBeInTheDocument();
   });
 
+  it('rolls initiative when adding a party hero from the party tab to an active fight', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /\+ Партия/ }));
+    await user.click(await screen.findByRole('button', { name: /Добавить всех/ }));
+    await user.click(await screen.findByRole('button', { name: /НАЧАТЬ БОЙ/ }));
+
+    const before = JSON.parse(localStorage.getItem('dnd_init_combat_v1')!);
+    const beforeIds = new Set(before.combatants.map((combatant: { id: string }) => combatant.id));
+
+    const header = screen.getByRole('banner');
+    const partyTab = within(header).getAllByRole('button', { name: /Партия/ })[0];
+    await user.click(partyTab);
+
+    const addButtons = await screen.findAllByRole('button', { name: /\+ В бой/ });
+    await user.click(addButtons[0]);
+
+    await waitFor(() => {
+      const after = JSON.parse(localStorage.getItem('dnd_init_combat_v1')!);
+      const added = after.combatants.find(
+        (combatant: { id: string }) => !beforeIds.has(combatant.id)
+      );
+      expect(added).toBeDefined();
+      expect(added.initiative).toBeGreaterThan(added.initiativeModifier);
+    });
+  });
+
   it('applies data changes coming from another tab', async () => {
     render(<App />);
     await screen.findByText('Боевой стол пуст');
