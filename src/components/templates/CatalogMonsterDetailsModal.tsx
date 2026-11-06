@@ -61,6 +61,19 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
               <span className="px-2 py-0.5 rounded-md text-[11px] bg-slate-800 text-slate-300 border border-slate-700">
                 {monster.size} {monster.category}
               </span>
+              {monster.sourceBook && (
+                <span
+                  title={`Источник: ${monster.sourceBook}`}
+                  className="max-w-full sm:max-w-[260px] truncate px-2 py-0.5 rounded-md text-[11px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/30"
+                >
+                  {monster.sourceBook}
+                </span>
+              )}
+              {monster.notes.startsWith('Именной НИП') && (
+                <span className="px-2 py-0.5 rounded-md text-[11px] bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/30">
+                  Именной НИП
+                </span>
+              )}
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-white font-rpg tracking-wide flex items-center gap-2">
               {monster.name}
@@ -164,6 +177,9 @@ export const CatalogMonsterDetailsModal: React.FC<Props> = ({
             )}
             {monster.languages && (
               <div><strong className="text-slate-200">Языки:</strong> {monster.languages}</div>
+            )}
+            {monster.sourceBook && (
+              <div><strong className="text-indigo-300">Источник:</strong> {monster.sourceBook}</div>
             )}
           </div>
 

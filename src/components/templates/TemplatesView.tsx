@@ -1,8 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
 import { CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { CatalogMonster, BestiarySection } from '../../types/bestiary';
-import { BESTIARY_5E14 } from '../../data/bestiary5e14';
-import { BESTIARY_5E24 } from '../../data/bestiary5e24';
 import { convertCatalogMonsterToTemplate } from '../../utils/catalogToTemplate';
 import { TemplateFormModal } from './TemplateFormModal';
 import { CatalogMonsterDetailsModal } from './CatalogMonsterDetailsModal';
@@ -25,7 +23,18 @@ import {
   Sparkles,
   Filter,
   Swords,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
+
+/**
+ * Known catalog sizes. The actual data modules are imported lazily so opening
+ * the app does not download several megabytes of monster statblocks.
+ */
+const CATALOG_COUNTS: Record<'5e14' | '5e24', number> = {
+  '5e24': 657,
+  '5e14': 2875,
+};
 
 interface Props {
   templates: CreatureTemplate[];
@@ -60,11 +69,55 @@ export const TemplatesView: React.FC<Props> = ({
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogCrFilter, setCatalogCrFilter] = useState<string>('all');
   const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<string>('all');
+  const [catalogSourceFilter, setCatalogSourceFilter] = useState<string>('all');
   const [catalogLimit, setCatalogLimit] = useState(48);
+  const deferredCatalogSearch = useDeferredValue(catalogSearch);
+
+  // Lazy-loaded catalog: only one edition is kept in memory at a time. The
+  // browser caches the imported module, so switching tabs is effectively free.
+  const [loadedCatalog, setLoadedCatalog] = useState<{
+    edition: '5e14' | '5e24';
+    monsters: CatalogMonster[];
+  } | null>(null);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogReloadKey, setCatalogReloadKey] = useState(0);
 
   useEffect(() => {
     setCatalogLimit(48);
-  }, [activeSection, catalogSearch, catalogCrFilter, catalogCategoryFilter]);
+  }, [activeSection, catalogSearch, catalogCrFilter, catalogCategoryFilter, catalogSourceFilter]);
+
+  useEffect(() => {
+    setCatalogSourceFilter('all');
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== '5e14' && activeSection !== '5e24') return;
+    if (loadedCatalog?.edition === activeSection) return;
+
+    let cancelled = false;
+    setCatalogError(null);
+
+    const load = async () => {
+      try {
+        const monsters =
+          activeSection === '5e24'
+            ? (await import('../../data/bestiary5e24')).BESTIARY_5E24
+            : (await import('../../data/bestiary5e14')).BESTIARY_5E14;
+        if (!cancelled) setLoadedCatalog({ edition: activeSection, monsters });
+      } catch {
+        if (!cancelled) {
+          setCatalogError(
+            'Не удалось загрузить каталог. Проверьте соединение и попробуйте ещё раз.'
+          );
+        }
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSection, catalogReloadKey, loadedCatalog?.edition]);
 
   // Modals state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -110,18 +163,36 @@ export const TemplatesView: React.FC<Props> = ({
 
   // Catalog list depending on 5e24 vs 5e14
   const activeCatalog = useMemo(() => {
-    return activeSection === '5e24' ? BESTIARY_5E24 : BESTIARY_5E14;
-  }, [activeSection]);
+    return loadedCatalog?.edition === activeSection ? loadedCatalog.monsters : [];
+  }, [activeSection, loadedCatalog]);
+
+  const isCatalogLoading =
+    (activeSection === '5e14' || activeSection === '5e24') &&
+    loadedCatalog?.edition !== activeSection &&
+    catalogError === null;
+
+  // Source books present in the active catalog (Monster Manual, Theros, ...).
+  // Some entries have multiple plaques joined by a comma, so split them.
+  const catalogSourceBooks = useMemo(() => {
+    const set = new Set<string>();
+    for (const monster of activeCatalog) {
+      for (const book of monster.sourceBook?.split(/,\s*/) ?? []) {
+        if (book.trim()) set.add(book.trim());
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ru'));
+  }, [activeCatalog]);
 
   // Filter catalog monsters
   const filteredCatalogMonsters = useMemo(() => {
     return activeCatalog.filter((m) => {
-      const q = catalogSearch.trim().toLowerCase();
+      const q = deferredCatalogSearch.trim().toLowerCase();
       const matchesSearch =
         q === '' ||
         m.name.toLowerCase().includes(q) ||
         m.englishName.toLowerCase().includes(q) ||
         m.category.toLowerCase().includes(q) ||
+        m.sourceBook?.toLowerCase().includes(q) ||
         m.notes.toLowerCase().includes(q) ||
         m.traits?.some((trait) => trait.name.toLowerCase().includes(q) || trait.description.toLowerCase().includes(q)) ||
         m.actions?.some((act) => act.name.toLowerCase().includes(q) || act.description.toLowerCase().includes(q));
@@ -137,9 +208,14 @@ export const TemplatesView: React.FC<Props> = ({
       // Category filter
       const matchesCat = catalogCategoryFilter === 'all' || m.category === catalogCategoryFilter;
 
-      return matchesSearch && matchesCr && matchesCat;
+      // Source book filter
+      const matchesSource =
+        catalogSourceFilter === 'all' ||
+        (m.sourceBook?.split(/,\s*/).map((book) => book.trim()).includes(catalogSourceFilter) ?? false);
+
+      return matchesSearch && matchesCr && matchesCat && matchesSource;
     });
-  }, [activeCatalog, catalogSearch, catalogCrFilter, catalogCategoryFilter]);
+  }, [activeCatalog, deferredCatalogSearch, catalogCrFilter, catalogCategoryFilter, catalogSourceFilter]);
 
   // Handlers
   const handleOpenCreate = () => {
@@ -337,7 +413,7 @@ export const TemplatesView: React.FC<Props> = ({
                 activeSection === '5e24' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
               }`}
             >
-              {BESTIARY_5E24.length}
+              {loadedCatalog?.edition === '5e24' ? loadedCatalog.monsters.length : CATALOG_COUNTS['5e24']}
             </span>
           </button>
 
@@ -383,7 +459,7 @@ export const TemplatesView: React.FC<Props> = ({
                 activeSection === '5e14' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
               }`}
             >
-              {BESTIARY_5E14.length}
+              {loadedCatalog?.edition === '5e14' ? loadedCatalog.monsters.length : CATALOG_COUNTS['5e14']}
             </span>
           </button>
         </div>
@@ -706,7 +782,11 @@ export const TemplatesView: React.FC<Props> = ({
                     : 'D&D 5e (Редакция 2014) • 5e14.dnd.su'}
                 </span>
                 <span className="text-xs text-slate-400">
-                  {filteredCatalogMonsters.length} {filteredCatalogMonsters.length === 1 ? 'существо' : 'существ'}
+                  {isCatalogLoading || catalogError
+                    ? `${CATALOG_COUNTS[activeSection]} существ в каталоге`
+                    : `${filteredCatalogMonsters.length} ${
+                        filteredCatalogMonsters.length === 1 ? 'существо' : 'существ'
+                      }`}
                 </span>
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-white font-rpg tracking-wide flex items-center gap-2">
@@ -714,8 +794,8 @@ export const TemplatesView: React.FC<Props> = ({
               </h2>
               <p className="text-xs text-slate-300 mt-1 max-w-2xl">
                 {activeSection === '5e24'
-                  ? 'Официальные существа и NPC по обновленной редакции правил 2024 года с сайта next.dnd.su. Добавляйте в свой личный бестиарий в один клик!'
-                  : 'Классические существа и NPC по оригинальной редакции правил 2014 года с сайта 5e14.dnd.su. Добавляйте в свой личный бестиарий в один клик!'}
+                  ? 'Полный каталог существ и NPC обновлённой редакции 2024 года с сайта next.dnd.su. Добавляйте в личный бестиарий в один клик.'
+                  : 'Полный каталог существ и NPC редакции 2014 года с сайта 5e14.dnd.su — включая дополнения, homebrew и именных NPC. Добавляйте в личный бестиарий в один клик.'}
               </p>
             </div>
 
@@ -753,7 +833,7 @@ export const TemplatesView: React.FC<Props> = ({
                 type="text"
                 value={catalogSearch}
                 onChange={(e) => setCatalogSearch(e.target.value)}
-                placeholder="Поиск существа (Гоблин, Dragon, Опасность, способность...)"
+                placeholder="Поиск по имени, способности или источнику..."
                 className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -808,21 +888,68 @@ export const TemplatesView: React.FC<Props> = ({
                 <option value="Небожитель">Небожитель</option>
               </select>
             </div>
+
+            {/* Source book filter */}
+            {catalogSourceBooks.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                <select
+                  value={catalogSourceFilter}
+                  onChange={(e) => setCatalogSourceFilter(e.target.value)}
+                  title="Источник (книга или дополнение)"
+                  className="max-w-[220px] bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                >
+                  <option value="all">Все источники</option>
+                  {catalogSourceBooks.map((book) => (
+                    <option key={book} value={book}>
+                      {book}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Grid of Catalog Creatures */}
-          {filteredCatalogMonsters.length === 0 ? (
+          {isCatalogLoading ? (
+            <div className="text-center py-20 bg-slate-900/30 border border-slate-800 rounded-2xl p-8">
+              <Loader2 className="w-10 h-10 text-amber-400 mx-auto mb-3 animate-spin" />
+              <h3 className="text-base font-bold text-slate-200">
+                Загружаем каталог {activeSection === '5e24' ? '5e24' : '5e14'}…
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                {activeSection === '5e24'
+                  ? '657 существ из next.dnd.su загружаются отдельным файлом.'
+                  : '2875 существ из 5e14.dnd.su загружаются один раз и далее берутся из кэша браузера.'}
+              </p>
+            </div>
+          ) : catalogError ? (
+            <div className="text-center py-16 bg-slate-900/30 border border-dashed border-rose-900/70 rounded-2xl p-8">
+              <AlertTriangle className="w-10 h-10 text-rose-400 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-200">Каталог не загрузился</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">{catalogError}</p>
+              <button
+                onClick={() => {
+                  setLoadedCatalog(null);
+                  setCatalogReloadKey((key) => key + 1);
+                }}
+                className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold rounded-xl text-xs transition"
+              >
+                Повторить загрузку
+              </button>
+            </div>
+          ) : filteredCatalogMonsters.length === 0 ? (
             <div className="text-center py-16 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl p-8">
               <Sparkles className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-300">Существа не найдены</h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Попробуйте изменить поисковый запрос или фильтр по уровню опасности (CR)
+                Попробуйте изменить поисковый запрос, источник или фильтр по уровню опасности (CR)
               </p>
               <button
                 onClick={() => {
                   setCatalogSearch('');
                   setCatalogCrFilter('all');
                   setCatalogCategoryFilter('all');
+                  setCatalogSourceFilter('all');
                 }}
                 className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition"
               >
@@ -866,6 +993,19 @@ export const TemplatesView: React.FC<Props> = ({
                             <span className="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
                               {monster.size} {monster.category}
                             </span>
+                            {monster.sourceBook && (
+                              <span
+                                title={`Источник: ${monster.sourceBook}`}
+                                className="max-w-[150px] truncate text-[10px] text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/25"
+                              >
+                                {monster.sourceBook}
+                              </span>
+                            )}
+                            {monster.notes.startsWith('Именной НИП') && (
+                              <span className="text-[10px] text-fuchsia-300 bg-fuchsia-500/10 px-1.5 py-0.5 rounded border border-fuchsia-500/25">
+                                Именной НИП
+                              </span>
+                            )}
                           </div>
 
                           <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition flex items-center gap-1.5 flex-wrap">
@@ -945,7 +1085,8 @@ export const TemplatesView: React.FC<Props> = ({
 
                       {/* Actions / abilities preview */}
                       <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/50 text-xs text-slate-300 font-mono line-clamp-3 whitespace-pre-line mb-4">
-                        {monster.notes}
+                        {monster.notes ||
+                          'Нет описания способностей — откройте карточку, чтобы посмотреть статблок.'}
                       </div>
                     </div>
 

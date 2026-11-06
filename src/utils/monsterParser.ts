@@ -1,6 +1,4 @@
 import { CatalogMonster } from '../types/bestiary';
-import { BESTIARY_5E14 } from '../data/bestiary5e14';
-import { BESTIARY_5E24 } from '../data/bestiary5e24';
 import { KNOWN_MONSTER_DICTIONARY } from '../data/knownMonsters';
 
 export interface ParsedMonsterResult {
@@ -90,55 +88,67 @@ export function extractMonsterSlugAndId(input: string): {
   return { id: numId, slug, rawName, edition };
 }
 
+function findInCatalog(
+  catalog: CatalogMonster[],
+  normInput: string,
+  cleanSlug: string,
+  cleanSlugWords: string
+): CatalogMonster | null {
+  // 1. Exact normalized URL match
+  const byExactUrl = catalog.find((m) => normalizeUrl(m.sourceUrl) === normInput);
+  if (byExactUrl) return byExactUrl;
+
+  // 2. Match by clean slug or exact names. Numeric IDs are intentionally not
+  // used on their own: a malformed link must not resolve to an unrelated
+  // monster that happens to have the same page ID.
+  return (
+    catalog.find((m) => {
+      const mNorm = normalizeUrl(m.sourceUrl);
+      const mSlug = mNorm.split('/').filter(Boolean).pop() || '';
+      const mSlugClean = mSlug.replace(/^\d+[-_]/, '').toLowerCase();
+
+      return (
+        mSlugClean === cleanSlug ||
+        m.englishName.toLowerCase() === cleanSlugWords ||
+        m.name.toLowerCase() === cleanSlugWords ||
+        m.id.toLowerCase() === cleanSlug ||
+        m.id.toLowerCase().replace(/^(5e14-|5e24-)/, '') === cleanSlug
+      );
+    }) || null
+  );
+}
+
+async function loadCatalog(edition: '5e14' | '5e24'): Promise<CatalogMonster[]> {
+  if (edition === '5e14') {
+    return (await import('../data/bestiary5e14')).BESTIARY_5E14;
+  }
+  return (await import('../data/bestiary5e24')).BESTIARY_5E24;
+}
+
 /**
- * Attempt to find a creature in pre-bundled catalogs or known dictionary by URL or slug
+ * Attempt to find a creature in the lazily loaded catalogs or known dictionary.
+ * Catalog data is imported on demand so opening the bestiary or importing one
+ * link does not put every monster into the initial application bundle.
  */
-export function findMonsterByUrlOrSlug(
+export async function findMonsterByUrlOrSlug(
   urlOrSlug: string,
   preferredEdition?: '5e14' | '5e24'
-): MonsterLookupResult | null {
-  const { id, slug, edition: detectedEdition } = extractMonsterSlugAndId(urlOrSlug);
+): Promise<MonsterLookupResult | null> {
+  const { slug, edition: detectedEdition } = extractMonsterSlugAndId(urlOrSlug);
   const targetEdition = detectedEdition || preferredEdition;
-
   const normInput = normalizeUrl(urlOrSlug);
-
-  // Group monsters by edition priority
-  const firstList = targetEdition === '5e14' ? BESTIARY_5E14 : BESTIARY_5E24;
-  const secondList = targetEdition === '5e14' ? BESTIARY_5E24 : BESTIARY_5E14;
-  const allMonsters = [...firstList, ...secondList];
-
-  // 1. Exact normalized URL match
-  const byExactUrl = allMonsters.find((m) => normalizeUrl(m.sourceUrl) === normInput);
-  if (byExactUrl) return { monster: byExactUrl, source: 'catalog' };
-
-  // 2. Match by numeric ID in URL (e.g. 21205-banshee, 40-banshee)
-  if (id) {
-    const byIdUrl = allMonsters.find((m) => {
-      const norm = normalizeUrl(m.sourceUrl);
-      return norm.includes(`/${id}-`) || norm.includes(`/${id}/`) || norm.endsWith(`/${id}`);
-    });
-    if (byIdUrl) return { monster: byIdUrl, source: 'catalog' };
-  }
-
-  // 3. Match by clean slug. Only exact matches are safe: partial matching
-  // used to turn unknown links like "9999-goblin-something" into a goblin.
   const cleanSlug = slug.toLowerCase();
   const cleanSlugWords = cleanSlug.replace(/[-_]+/g, ' ').toLowerCase();
 
-  const bySlug = allMonsters.find((m) => {
-    const mNorm = normalizeUrl(m.sourceUrl);
-    const mSlug = mNorm.split('/').filter(Boolean).pop() || '';
-    const mSlugClean = mSlug.replace(/^\d+[-_]/, '').toLowerCase();
+  const editionsToSearch: Array<'5e14' | '5e24'> = targetEdition
+    ? [targetEdition]
+    : ['5e24', '5e14'];
 
-    return (
-      mSlugClean === cleanSlug ||
-      m.englishName.toLowerCase() === cleanSlugWords ||
-      m.name.toLowerCase() === cleanSlugWords ||
-      m.id.toLowerCase() === cleanSlug ||
-      m.id.toLowerCase().replace(/^(5e14-|5e24-)/, '') === cleanSlug
-    );
-  });
-  if (bySlug) return { monster: bySlug, source: 'catalog' };
+  for (const edition of editionsToSearch) {
+    const catalog = await loadCatalog(edition);
+    const found = findInCatalog(catalog, normInput, cleanSlug, cleanSlugWords);
+    if (found) return { monster: found, source: 'catalog' };
+  }
 
   // 4. Check KNOWN_MONSTER_DICTIONARY (approximate fallback, not a page scrape)
   const dictKey = cleanSlug.replace(/^\d+[-_]/, '');

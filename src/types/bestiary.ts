@@ -30,6 +30,7 @@ export interface CatalogMonster {
   conditionImmunities?: string;
   senses?: string;
   languages?: string;
+  sourceBook?: string;
   traits?: { name: string; description: string }[];
   actions: { name: string; description: string }[];
   bonusActions?: { name: string; description: string }[];

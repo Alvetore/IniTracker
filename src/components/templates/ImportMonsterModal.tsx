@@ -28,6 +28,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
   const [inputText, setInputText] = useState('');
   const [previewTemplate, setPreviewTemplate] = useState<CreatureTemplate | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   // Reset the form between openings; the edition may have changed in the parent tab.
   useEffect(() => {
@@ -38,6 +39,7 @@ export const ImportMonsterModal: React.FC<Props> = ({
       setInputText('');
       setPreviewTemplate(null);
       setStatusMessage(null);
+      setIsLookingUp(false);
     }
   }, [isOpen, initialEdition]);
 
@@ -53,7 +55,9 @@ export const ImportMonsterModal: React.FC<Props> = ({
     setStatusMessage(null);
   };
 
-  const handleParseUrl = () => {
+  const handleParseUrl = async () => {
+    if (isLookingUp) return;
+
     setStatusMessage(null);
     setPreviewTemplate(null);
 
@@ -73,8 +77,21 @@ export const ImportMonsterModal: React.FC<Props> = ({
       setEdition('5e14');
     }
 
-    // 1. Try finding in bundled catalogs or known monster database
-    const lookup = findMonsterByUrlOrSlug(trimmed, activeEdition);
+    // 1. Try finding in bundled catalogs or known monster database. The
+    // catalogs are lazy-loaded, so show progress while the chunk downloads.
+    setIsLookingUp(true);
+    let lookup: Awaited<ReturnType<typeof findMonsterByUrlOrSlug>>;
+    try {
+      lookup = await findMonsterByUrlOrSlug(trimmed, activeEdition);
+    } catch {
+      setStatusMessage({
+        text: 'Не удалось загрузить каталог существ. Проверьте соединение и попробуйте ещё раз.',
+        type: 'error',
+      });
+      setIsLookingUp(false);
+      return;
+    }
+    setIsLookingUp(false);
     if (lookup) {
       const tpl = convertCatalogMonsterToTemplate(lookup.monster);
       if (lookup.source === 'dictionary') {
@@ -279,9 +296,10 @@ export const ImportMonsterModal: React.FC<Props> = ({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      handleParseUrl();
+                      void handleParseUrl();
                     }
                   }}
+                  disabled={isLookingUp}
                   placeholder={
                     edition === '5e24'
                       ? 'https://next.dnd.su/bestiary/21205-banshee/'
@@ -291,10 +309,11 @@ export const ImportMonsterModal: React.FC<Props> = ({
                 />
                 <button
                   type="button"
-                  onClick={handleParseUrl}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition"
+                  onClick={() => void handleParseUrl()}
+                  disabled={isLookingUp}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:bg-slate-700 disabled:text-slate-400 text-slate-950 font-bold rounded-xl text-xs transition min-w-[86px]"
                 >
-                  Найти
+                  {isLookingUp ? 'Ищем…' : 'Найти'}
                 </button>
               </div>
               <p className="text-[11px] text-slate-500">

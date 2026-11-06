@@ -23,6 +23,7 @@ export function convertCatalogMonsterToTemplate(monster: CatalogMonster): Creatu
       monster.category,
       `CR ${monster.cr}`,
       monster.size,
+      ...(monster.sourceBook ? [monster.sourceBook.split(',')[0].trim()] : []),
     ],
     notes: monster.notes,
     cr: monster.cr,
