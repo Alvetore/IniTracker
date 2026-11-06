@@ -2,6 +2,14 @@ import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
 import { CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { CatalogMonster, BestiarySection } from '../../types/bestiary';
 import { convertCatalogMonsterToTemplate } from '../../utils/catalogToTemplate';
+import {
+  CatalogFilterOptions,
+  CATALOG_SIZE_OPTIONS,
+  CATALOG_SORT_OPTIONS,
+  DEFAULT_CATALOG_FILTERS,
+  filterAndSortCatalog,
+  getCatalogSourceBooks,
+} from '../../utils/catalogFilters';
 import { TemplateFormModal } from './TemplateFormModal';
 import { CatalogMonsterDetailsModal } from './CatalogMonsterDetailsModal';
 import { ImportMonsterModal } from './ImportMonsterModal';
@@ -25,6 +33,11 @@ import {
   Swords,
   Loader2,
   AlertTriangle,
+  ArrowUpDown,
+  RotateCcw,
+  UserRound,
+  Crown,
+  X,
 } from 'lucide-react';
 
 /**
@@ -66,12 +79,11 @@ export const TemplatesView: React.FC<Props> = ({
   const [selectedType, setSelectedType] = useState<CreatureType | 'all'>('all');
 
   // Catalog filters state (for 5e24 and 5e14)
-  const [catalogSearch, setCatalogSearch] = useState('');
-  const [catalogCrFilter, setCatalogCrFilter] = useState<string>('all');
-  const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<string>('all');
-  const [catalogSourceFilter, setCatalogSourceFilter] = useState<string>('all');
+  const [catalogFilters, setCatalogFilters] = useState<CatalogFilterOptions>(
+    DEFAULT_CATALOG_FILTERS
+  );
   const [catalogLimit, setCatalogLimit] = useState(48);
-  const deferredCatalogSearch = useDeferredValue(catalogSearch);
+  const deferredCatalogSearch = useDeferredValue(catalogFilters.search);
 
   // Lazy-loaded catalog: only one edition is kept in memory at a time. The
   // browser caches the imported module, so switching tabs is effectively free.
@@ -84,10 +96,15 @@ export const TemplatesView: React.FC<Props> = ({
 
   useEffect(() => {
     setCatalogLimit(48);
-  }, [activeSection, catalogSearch, catalogCrFilter, catalogCategoryFilter, catalogSourceFilter]);
+  }, [activeSection, catalogFilters]);
 
   useEffect(() => {
-    setCatalogSourceFilter('all');
+    setCatalogFilters((previous) => {
+      const sort =
+        activeSection === '5e24' && previous.sort === 'source-asc' ? 'name-asc' : previous.sort;
+      if (previous.sourceBook === 'all' && previous.sort === sort) return previous;
+      return { ...previous, sourceBook: 'all', sort };
+    });
   }, [activeSection]);
 
   useEffect(() => {
@@ -172,50 +189,49 @@ export const TemplatesView: React.FC<Props> = ({
     catalogError === null;
 
   // Source books present in the active catalog (Monster Manual, Theros, ...).
-  // Some entries have multiple plaques joined by a comma, so split them.
-  const catalogSourceBooks = useMemo(() => {
-    const set = new Set<string>();
-    for (const monster of activeCatalog) {
-      for (const book of monster.sourceBook?.split(/,\s*/) ?? []) {
-        if (book.trim()) set.add(book.trim());
-      }
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ru'));
-  }, [activeCatalog]);
+  const catalogSourceBooks = useMemo(
+    () => getCatalogSourceBooks(activeCatalog),
+    [activeCatalog]
+  );
 
-  // Filter catalog monsters
-  const filteredCatalogMonsters = useMemo(() => {
-    return activeCatalog.filter((m) => {
-      const q = deferredCatalogSearch.trim().toLowerCase();
-      const matchesSearch =
-        q === '' ||
-        m.name.toLowerCase().includes(q) ||
-        m.englishName.toLowerCase().includes(q) ||
-        m.category.toLowerCase().includes(q) ||
-        m.sourceBook?.toLowerCase().includes(q) ||
-        m.notes.toLowerCase().includes(q) ||
-        m.traits?.some((trait) => trait.name.toLowerCase().includes(q) || trait.description.toLowerCase().includes(q)) ||
-        m.actions?.some((act) => act.name.toLowerCase().includes(q) || act.description.toLowerCase().includes(q));
+  const catalogSortOptions = useMemo(
+    () =>
+      catalogSourceBooks.length > 0
+        ? CATALOG_SORT_OPTIONS
+        : CATALOG_SORT_OPTIONS.filter((option) => option.id !== 'source-asc'),
+    [catalogSourceBooks.length]
+  );
 
-      // CR filter
-      let matchesCr = true;
-      if (catalogCrFilter === 'low') matchesCr = m.crNum <= 0.5; // CR 0 - 1/2
-      else if (catalogCrFilter === 'tier1') matchesCr = m.crNum >= 1 && m.crNum <= 4; // CR 1 - 4
-      else if (catalogCrFilter === 'tier2') matchesCr = m.crNum >= 5 && m.crNum <= 10; // CR 5 - 10
-      else if (catalogCrFilter === 'tier3') matchesCr = m.crNum >= 11; // CR 11+
-      else if (catalogCrFilter !== 'all') matchesCr = m.cr === catalogCrFilter;
+  const effectiveCatalogFilters = useMemo(
+    () => ({ ...catalogFilters, search: deferredCatalogSearch }),
+    [catalogFilters, deferredCatalogSearch]
+  );
 
-      // Category filter
-      const matchesCat = catalogCategoryFilter === 'all' || m.category === catalogCategoryFilter;
+  const filteredCatalogMonsters = useMemo(
+    () => filterAndSortCatalog(activeCatalog, effectiveCatalogFilters),
+    [activeCatalog, effectiveCatalogFilters]
+  );
 
-      // Source book filter
-      const matchesSource =
-        catalogSourceFilter === 'all' ||
-        (m.sourceBook?.split(/,\s*/).map((book) => book.trim()).includes(catalogSourceFilter) ?? false);
+  const activeCatalogFilterCount = useMemo(
+    () =>
+      [
+        catalogFilters.search.trim() !== '',
+        catalogFilters.cr !== 'all',
+        catalogFilters.category !== 'all',
+        catalogFilters.size !== 'all',
+        catalogFilters.sourceBook !== 'all',
+        catalogFilters.named !== 'all',
+        catalogFilters.legendaryOnly,
+      ].filter(Boolean).length,
+    [catalogFilters]
+  );
 
-      return matchesSearch && matchesCr && matchesCat && matchesSource;
-    });
-  }, [activeCatalog, deferredCatalogSearch, catalogCrFilter, catalogCategoryFilter, catalogSourceFilter]);
+  const resetCatalogFilters = () => {
+    setCatalogFilters((previous) => ({
+      ...DEFAULT_CATALOG_FILTERS,
+      sort: previous.sort,
+    }));
+  };
 
   // Handlers
   const handleOpenCreate = () => {
@@ -824,51 +840,91 @@ export const TemplatesView: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Search & Filters */}
-          <div className="flex flex-col md:flex-row gap-3">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={catalogSearch}
-                onChange={(e) => setCatalogSearch(e.target.value)}
-                placeholder="Поиск по имени, способности или источнику..."
-                className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-              />
-            </div>
+          {/* Search, filters & sorting */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={catalogFilters.search}
+                  onChange={(e) =>
+                    setCatalogFilters((previous) => ({ ...previous, search: e.target.value }))
+                  }
+                  placeholder="Поиск по имени, способности, мировоззрению или источнику..."
+                  className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                />
+                {catalogFilters.search && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCatalogFilters((previous) => ({ ...previous, search: '' }))
+                    }
+                    aria-label="Очистить поиск"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
 
-            {/* CR Filter */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-              <span className="text-xs text-slate-500 flex items-center gap-1 mr-1">
-                <Filter className="w-3 h-3" /> CR:
-              </span>
-              {[
-                { id: 'all', label: 'Все CR' },
-                { id: 'low', label: '0 – 1/2' },
-                { id: 'tier1', label: '1 – 4' },
-                { id: 'tier2', label: '5 – 10' },
-                { id: 'tier3', label: '11+' },
-              ].map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setCatalogCrFilter(filter.id)}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
-                    catalogCrFilter === filter.id
-                      ? 'bg-amber-500 text-slate-950 shadow-md'
-                      : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
+              {/* Sorting */}
+              <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-xl px-3">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <select
+                  value={catalogFilters.sort}
+                  onChange={(e) =>
+                    setCatalogFilters((previous) => ({ ...previous, sort: e.target.value as CatalogFilterOptions['sort'] }))
+                  }
+                  title="Сортировка каталога"
+                  className="bg-transparent py-2.5 pr-1 text-xs text-slate-200 focus:outline-none cursor-pointer"
                 >
-                  {filter.label}
-                </button>
-              ))}
+                  {catalogSortOptions.map((option) => (
+                    <option key={option.id} value={option.id} className="bg-slate-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Category Filter */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* CR Filter */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                <span className="text-xs text-slate-500 flex items-center gap-1 mr-1">
+                  <Filter className="w-3 h-3" /> CR:
+                </span>
+                {[
+                  { id: 'all', label: 'Все CR' },
+                  { id: 'low', label: '0 – 1/2' },
+                  { id: 'tier1', label: '1 – 4' },
+                  { id: 'tier2', label: '5 – 10' },
+                  { id: 'tier3', label: '11+' },
+                ].map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() =>
+                      setCatalogFilters((previous) => ({ ...previous, cr: filter.id }))
+                    }
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                      catalogFilters.cr === filter.id
+                        ? 'bg-amber-500 text-slate-950 shadow-md'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Category Filter */}
               <select
-                value={catalogCategoryFilter}
-                onChange={(e) => setCatalogCategoryFilter(e.target.value)}
+                value={catalogFilters.category}
+                onChange={(e) =>
+                  setCatalogFilters((previous) => ({ ...previous, category: e.target.value }))
+                }
+                title="Тип существа"
                 className="bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
               >
                 <option value="all">Все типы</option>
@@ -887,14 +943,31 @@ export const TemplatesView: React.FC<Props> = ({
                 <option value="Растение">Растение</option>
                 <option value="Небожитель">Небожитель</option>
               </select>
-            </div>
 
-            {/* Source book filter */}
-            {catalogSourceBooks.length > 0 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+              {/* Size Filter */}
+              <select
+                value={catalogFilters.size}
+                onChange={(e) =>
+                  setCatalogFilters((previous) => ({ ...previous, size: e.target.value }))
+                }
+                title="Размер существа"
+                className="bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+              >
+                <option value="all">Все размеры</option>
+                {CATALOG_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+
+              {/* Source book filter */}
+              {catalogSourceBooks.length > 0 && (
                 <select
-                  value={catalogSourceFilter}
-                  onChange={(e) => setCatalogSourceFilter(e.target.value)}
+                  value={catalogFilters.sourceBook}
+                  onChange={(e) =>
+                    setCatalogFilters((previous) => ({ ...previous, sourceBook: e.target.value }))
+                  }
                   title="Источник (книга или дополнение)"
                   className="max-w-[220px] bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                 >
@@ -905,8 +978,60 @@ export const TemplatesView: React.FC<Props> = ({
                     </option>
                   ))}
                 </select>
-              </div>
-            )}
+              )}
+
+              {/* Named NPC filter */}
+              <button
+                type="button"
+                onClick={() =>
+                  setCatalogFilters((previous) => ({
+                    ...previous,
+                    named: previous.named === 'named' ? 'all' : 'named',
+                  }))
+                }
+                title="Показать только именных NPC"
+                className={`px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border ${
+                  catalogFilters.named === 'named'
+                    ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/50'
+                    : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <UserRound className="w-3.5 h-3.5" />
+                Именные НИП
+              </button>
+
+              {/* Legendary filter */}
+              <button
+                type="button"
+                onClick={() =>
+                  setCatalogFilters((previous) => ({
+                    ...previous,
+                    legendaryOnly: !previous.legendaryOnly,
+                  }))
+                }
+                title="Показать только существ с легендарными действиями"
+                className={`px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border ${
+                  catalogFilters.legendaryOnly
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/50'
+                    : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <Crown className="w-3.5 h-3.5" />
+                Легендарные
+              </button>
+
+              {/* Reset filters */}
+              {activeCatalogFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={resetCatalogFilters}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-300 bg-rose-950/30 border border-rose-900/60 hover:bg-rose-950/50 transition flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Сбросить ({activeCatalogFilterCount})
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Grid of Catalog Creatures */}
@@ -942,15 +1067,10 @@ export const TemplatesView: React.FC<Props> = ({
               <Sparkles className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-300">Существа не найдены</h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Попробуйте изменить поисковый запрос, источник или фильтр по уровню опасности (CR)
+                Попробуйте изменить запрос, тип, размер, источник или фильтр по уровню опасности (CR)
               </p>
               <button
-                onClick={() => {
-                  setCatalogSearch('');
-                  setCatalogCrFilter('all');
-                  setCatalogCategoryFilter('all');
-                  setCatalogSourceFilter('all');
-                }}
+                onClick={resetCatalogFilters}
                 className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition"
               >
                 Сбросить фильтры
