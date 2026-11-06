@@ -5,7 +5,19 @@ export interface Condition {
   name: string;
   roundsRemaining: number | null; // null = бессрочно до снятия
   color?: string; // hex или tailwind класс
+  icon?: string; // emoji или короткий символ
   notes?: string;
+}
+
+export interface SavedCondition {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  defaultDuration?: number | null;
+  notes?: string;
+  createdAt: number;
+  updatedAt?: number;
 }
 
 export interface TurnHistoryEntry {
@@ -31,6 +43,7 @@ export interface CreatureTemplate {
   edition?: '5e14' | '5e24' | 'custom';
   sourceUrl?: string;
   sourceLabel?: string;
+  notesVisibleByDefault?: boolean;
   createdAt: number;
 }
 
@@ -85,6 +98,7 @@ export interface Combatant {
   armorClass: string | number;
   conditions: Condition[];
   notes: string;
+  notesVisibleByDefault?: boolean;
   isDefeated: boolean; // повержен / без сознания
   isDelayed: boolean; // задержал ход
   templateId?: string;
@@ -120,4 +134,5 @@ export interface AppDataExport {
   party: PartyMember[];
   encounters: Encounter[];
   activeCombat?: ActiveCombatState | null;
+  customConditions?: SavedCondition[];
 }

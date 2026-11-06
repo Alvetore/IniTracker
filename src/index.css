@@ -13,6 +13,44 @@ button, a, input, select, textarea {
   touch-action: manipulation;
 }
 
+/* Mobile readability: small utility text should not be microscopic on phones. */
+@media (max-width: 639px) {
+  .text-\[9px\] {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .text-\[10px\] {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .text-\[11px\] {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .text-xs {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .text-sm {
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .text-base {
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  button[type="submit"] {
+    min-height: 42px;
+  }
+  button[aria-label="Закрыть"] {
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 .font-rpg {
   font-family: var(--theme-font, 'Cinzel', serif);
 }

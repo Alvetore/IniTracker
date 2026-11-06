@@ -123,7 +123,7 @@ describe('App integration', () => {
     const initialState = JSON.parse(localStorage.getItem('dnd_init_combat_v1')!);
     const targetId = initialState.combatants[initialState.currentTurnIndex].id;
 
-    const statusButtons = await screen.findAllByRole('button', { name: 'Статус' });
+    const statusButtons = await screen.findAllByRole('button', { name: 'Добавить состояние' });
     await user.click(statusButtons[0]);
     const dialog = await screen.findByRole('dialog', { name: /Добавить состояние/ });
     await user.click(within(dialog).getByRole('button', { name: /Отравлен/ }));

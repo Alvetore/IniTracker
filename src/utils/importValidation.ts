@@ -83,6 +83,9 @@ function validateTemplates(value: unknown, errors: string[]): void {
       pushError(errors, `${path}.sourceUrl`, 'ожидалась http(s)-ссылка');
     }
     optionalString(item.sourceLabel, `${path}.sourceLabel`, errors);
+    if (item.notesVisibleByDefault !== undefined && typeof item.notesVisibleByDefault !== 'boolean') {
+      pushError(errors, `${path}.notesVisibleByDefault`, 'ожидалось boolean');
+    }
     if (item.edition !== undefined && !EDITIONS.includes(item.edition as string)) {
       pushError(errors, `${path}.edition`, 'недопустимое издание');
     }
@@ -212,6 +215,7 @@ function validateConditions(value: unknown, path: string, errors: string[]): voi
       pushError(errors, `${conditionPath}.roundsRemaining`, 'ожидалось число или null');
     }
     optionalString(condition.color, `${conditionPath}.color`, errors);
+    optionalString(condition.icon, `${conditionPath}.icon`, errors);
     optionalString(condition.notes, `${conditionPath}.notes`, errors);
   });
 }
@@ -276,6 +280,12 @@ function validateCombatants(value: unknown, errors: string[]): void {
     }
     optionalString(combatant.templateId, `${path}.templateId`, errors);
     optionalString(combatant.sourcePartyMemberId, `${path}.sourcePartyMemberId`, errors);
+    if (
+      combatant.notesVisibleByDefault !== undefined &&
+      typeof combatant.notesVisibleByDefault !== 'boolean'
+    ) {
+      pushError(errors, `${path}.notesVisibleByDefault`, 'ожидалось boolean');
+    }
 
     if (!isObject(combatant.hp)) {
       pushError(errors, `${path}.hp`, 'ожидался объект');
@@ -347,6 +357,39 @@ function validateActiveCombat(value: unknown, errors: string[]): void {
   }
 }
 
+function validateSavedConditions(value: unknown, errors: string[]): void {
+  if (!Array.isArray(value)) {
+    pushError(errors, 'customConditions', 'ожидался массив');
+    return;
+  }
+
+  value.forEach((item, index) => {
+    const path = `customConditions[${index}]`;
+    if (!isObject(item)) {
+      pushError(errors, path, 'ожидался объект');
+      return;
+    }
+    requireString(item.id, `${path}.id`, errors);
+    requireString(item.name, `${path}.name`, errors);
+    requireString(item.color, `${path}.color`, errors);
+    optionalString(item.icon, `${path}.icon`, errors);
+    optionalString(item.notes, `${path}.notes`, errors);
+    if (
+      item.defaultDuration !== undefined &&
+      item.defaultDuration !== null &&
+      !isFiniteNumber(item.defaultDuration)
+    ) {
+      pushError(errors, `${path}.defaultDuration`, 'ожидалось число или null');
+    }
+    if (!isFiniteNumber(item.createdAt)) {
+      pushError(errors, `${path}.createdAt`, 'ожидалось число');
+    }
+    if (item.updatedAt !== undefined && !isFiniteNumber(item.updatedAt)) {
+      pushError(errors, `${path}.updatedAt`, 'ожидалось число');
+    }
+  });
+}
+
 /**
  * Validates an imported backup before anything is written to localStorage.
  * Returns a list of human-readable errors; an empty list means the data is safe
@@ -361,6 +404,7 @@ export function validateImportData(value: unknown): string[] {
   if ('templates' in value) validateTemplates(value.templates, errors);
   if ('party' in value) validateParty(value.party, errors);
   if ('encounters' in value) validateEncounters(value.encounters, errors);
+  if ('customConditions' in value) validateSavedConditions(value.customConditions, errors);
   if ('activeCombat' in value && value.activeCombat !== null) {
     validateActiveCombat(value.activeCombat, errors);
   }

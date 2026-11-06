@@ -290,6 +290,9 @@ export const App: React.FC = () => {
       for (let i = 1; i <= m.count; i++) {
         const name = m.count > 1 ? `${m.name} ${i}` : m.name;
         const { total: initVal } = rollInitiativeForSystem(diceSystem, m.initiativeModifier);
+        const linkedTemplate = m.templateId
+          ? templates.find((template) => template.id === m.templateId)
+          : undefined;
 
         combatants.push({
           id: `enc-m-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
@@ -305,6 +308,7 @@ export const App: React.FC = () => {
           armorClass: m.armorClass,
           conditions: [],
           notes: m.notes || '',
+          notesVisibleByDefault: Boolean(linkedTemplate?.notesVisibleByDefault),
           isDefeated: false,
           isDelayed: false,
           templateId: m.templateId,
@@ -345,6 +349,9 @@ export const App: React.FC = () => {
       for (let i = 1; i <= m.count; i++) {
         const name = m.count > 1 ? `${m.name} ${i}` : m.name;
         const { total: initVal } = rollInitiativeForSystem(combatState.diceSystem, m.initiativeModifier);
+        const linkedTemplate = m.templateId
+          ? templates.find((template) => template.id === m.templateId)
+          : undefined;
 
         newCombatants.push({
           id: `reinf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
@@ -360,6 +367,7 @@ export const App: React.FC = () => {
           armorClass: m.armorClass,
           conditions: [],
           notes: m.notes || '',
+          notesVisibleByDefault: Boolean(linkedTemplate?.notesVisibleByDefault),
           isDefeated: false,
           isDelayed: false,
           templateId: m.templateId,
@@ -526,6 +534,7 @@ export const App: React.FC = () => {
             : parseInt(String(tpl.armorClass)) || 10,
         conditions: [],
         notes: tpl.notes || '',
+        notesVisibleByDefault: Boolean(tpl.notesVisibleByDefault),
         isDefeated: false,
         isDelayed: false,
         templateId: tpl.id,

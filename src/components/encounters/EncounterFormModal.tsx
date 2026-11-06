@@ -249,7 +249,7 @@ export const EncounterFormModal: React.FC<Props> = ({
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Оценка сложности
               </label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {[
                   { id: 'easy', label: 'Легкий', color: 'text-emerald-400 border-emerald-500/50' },
                   { id: 'medium', label: 'Средний', color: 'text-blue-400 border-blue-500/50' },

@@ -43,6 +43,7 @@ export const TemplateFormModal: React.FC<Props> = ({
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [notes, setNotes] = useState('');
+  const [notesVisibleByDefault, setNotesVisibleByDefault] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -59,6 +60,7 @@ export const TemplateFormModal: React.FC<Props> = ({
       setInitiativeModifier(initialTemplate.initiativeModifier);
       setTags([...initialTemplate.tags]);
       setNotes(initialTemplate.notes);
+      setNotesVisibleByDefault(Boolean(initialTemplate.notesVisibleByDefault));
     } else {
       // Default empty values for new template
       setName('');
@@ -73,6 +75,7 @@ export const TemplateFormModal: React.FC<Props> = ({
       setInitiativeModifier(0);
       setTags([]);
       setNotes('');
+      setNotesVisibleByDefault(false);
     }
     setError('');
   }, [initialTemplate, isOpen]);
@@ -123,6 +126,7 @@ export const TemplateFormModal: React.FC<Props> = ({
       initiativeModifier: Number(initiativeModifier),
       tags,
       notes: notes.trim(),
+      notesVisibleByDefault,
       cr: cr.trim() || undefined,
       edition: edition !== 'custom' ? edition : undefined,
       sourceUrl: sourceUrl.trim() || undefined,
@@ -212,7 +216,7 @@ export const TemplateFormModal: React.FC<Props> = ({
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Принадлежность
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { id: 'enemy', label: 'Враг', color: 'border-red-500/60 bg-red-950/40 text-red-300' },
                   { id: 'ally', label: 'Союзник', color: 'border-emerald-500/60 bg-emerald-950/40 text-emerald-300' },
@@ -257,7 +261,7 @@ export const TemplateFormModal: React.FC<Props> = ({
                   min="1"
                   value={maxHp}
                   onChange={(e) => setMaxHp(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full bg-slate-900 border border-slate-700 py-2 text-center text-white font-bold focus:outline-none focus:border-rose-500 text-sm"
+                  className="min-w-0 flex-1 bg-slate-900 border border-slate-700 py-2 text-center text-white font-bold focus:outline-none focus:border-rose-500 text-sm"
                 />
                 <button
                   type="button"
@@ -300,7 +304,7 @@ export const TemplateFormModal: React.FC<Props> = ({
                   type="number"
                   value={initiativeModifier}
                   onChange={(e) => setInitiativeModifier(parseInt(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 py-2 text-center text-white font-bold focus:outline-none focus:border-amber-500 text-sm"
+                  className="min-w-0 flex-1 bg-slate-900 border border-slate-700 py-2 text-center text-white font-bold focus:outline-none focus:border-amber-500 text-sm"
                 />
                 <button
                   type="button"
@@ -342,7 +346,7 @@ export const TemplateFormModal: React.FC<Props> = ({
             </div>
 
             {/* Custom Tag input & Selected Tags */}
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-col min-[360px]:flex-row gap-2 pt-1">
               <input
                 type="text"
                 value={customTag}
@@ -398,6 +402,21 @@ export const TemplateFormModal: React.FC<Props> = ({
               placeholder="Атака: Длинный меч +5 (1d8+3 рубящего)&#10;Особое: Всплеск ярости, сопротивление к огню, уязвимость к серебру..."
               className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-xs font-mono transition"
             />
+            <label className="flex items-start gap-2 bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer text-xs text-slate-300">
+              <input
+                type="checkbox"
+                checked={notesVisibleByDefault}
+                onChange={(e) => setNotesVisibleByDefault(e.target.checked)}
+                aria-label="Показывать заметку сразу"
+                className="mt-0.5 rounded border-slate-700 text-amber-500 focus:ring-0 w-4 h-4"
+              />
+              <span>
+                Показывать заметку сразу
+                <span className="block text-[10px] text-slate-500">
+                  При добавлении в бой заметка будет раскрыта по умолчанию
+                </span>
+              </span>
+            </label>
           </div>
 
           {/* Footer Actions */}

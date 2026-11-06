@@ -195,7 +195,7 @@ export const AddToCombatModal: React.FC<Props> = ({
               </div>
 
               {/* Quick count chips */}
-              <div className="flex items-center gap-1 flex-1 overflow-x-auto">
+              <div className="flex flex-wrap items-center gap-1 flex-1">
                 {[1, 2, 3, 4, 6].map((n) => (
                   <button
                     key={n}

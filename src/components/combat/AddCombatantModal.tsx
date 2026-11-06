@@ -94,6 +94,7 @@ export const AddCombatantModal: React.FC<Props> = ({
           armorClass: tpl.armorClass,
           conditions: [],
           notes: tpl.notes,
+          notesVisibleByDefault: Boolean(tpl.notesVisibleByDefault),
           isDefeated: false,
           isDelayed: false,
           templateId: tpl.id,
@@ -214,7 +215,8 @@ export const AddCombatantModal: React.FC<Props> = ({
                   : 'text-slate-400 hover:text-white disabled:opacity-40'
               }`}
             >
-              Герой партии
+              <span className="hidden min-[360px]:inline">Герой партии</span>
+              <span className="min-[360px]:hidden">Герой</span>
             </button>
             <button
               type="button"
@@ -361,7 +363,7 @@ export const AddCombatantModal: React.FC<Props> = ({
           {/* Count */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              Количество (автонумерация при &gt; 1)
+              Количество <span className="normal-case tracking-normal text-slate-500">(шт.)</span>
             </label>
             <div className="flex items-center gap-2">
               {[1, 2, 3, 4].map((num) => (
@@ -391,7 +393,7 @@ export const AddCombatantModal: React.FC<Props> = ({
 
           {/* Initiative Selection */}
           <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2.5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between gap-2">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-amber-400" />
                 Инициатива

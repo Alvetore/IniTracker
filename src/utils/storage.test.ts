@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Storage as AppStorage } from './storage';
-import { ActiveCombatState, CreatureTemplate, Encounter, PartyMember } from '../types';
+import { ActiveCombatState, CreatureTemplate, Encounter, PartyMember, SavedCondition } from '../types';
 
 let store: Map<string, string>;
 let failOnKey: string | null = null;
@@ -107,11 +107,23 @@ const combatState: ActiveCombatState = {
   turnHistory: [],
 };
 
+const savedCondition: SavedCondition = {
+  id: 'saved-1',
+  name: 'Горит (1d4 огня)',
+  color: '#ef4444',
+  icon: '🔥',
+  defaultDuration: 2,
+  notes: '1d4 огня в начале хода',
+  createdAt: 1,
+  updatedAt: 2,
+};
+
 function seedFullData() {
   AppStorage.saveTemplates([template]);
   AppStorage.saveParty([partyMember]);
   AppStorage.saveEncounters([encounter]);
   AppStorage.saveCombatState(combatState);
+  AppStorage.saveCustomConditions([savedCondition]);
 }
 
 describe('Storage defaults', () => {
@@ -143,6 +155,7 @@ describe('Storage.exportAll', () => {
     AppStorage.saveParty([]);
     AppStorage.saveEncounters([]);
     AppStorage.saveCombatState(null);
+    AppStorage.saveCustomConditions([]);
 
     const exported = JSON.parse(AppStorage.exportAll());
 
@@ -151,6 +164,7 @@ describe('Storage.exportAll', () => {
     expect(exported.templates).toEqual([]);
     expect(exported.party).toEqual([]);
     expect(exported.encounters).toEqual([]);
+    expect(exported.customConditions).toEqual([]);
     expect(exported).toHaveProperty('activeCombat', null);
   });
 
@@ -165,6 +179,7 @@ describe('Storage.exportAll', () => {
     expect(AppStorage.getParty()).toEqual([partyMember]);
     expect(AppStorage.getEncounters()).toEqual([encounter]);
     expect(AppStorage.getCombatState()).toEqual(combatState);
+    expect(AppStorage.getCustomConditions()).toEqual([savedCondition]);
   });
 });
 
@@ -182,6 +197,7 @@ describe('Storage.importAll', () => {
     expect(AppStorage.getTemplates()).toEqual([]);
     expect(AppStorage.getParty()).toEqual([]);
     expect(AppStorage.getEncounters()).toEqual([]);
+    expect(AppStorage.getCustomConditions()).toEqual([]);
     expect(AppStorage.getCombatState()).toBeNull();
   });
 
@@ -205,6 +221,7 @@ describe('Storage.importAll', () => {
     expect(AppStorage.getParty()).toEqual([partyMember]);
     expect(AppStorage.getEncounters()).toEqual([encounter]);
     expect(AppStorage.getCombatState()).toEqual(combatState);
+    expect(AppStorage.getCustomConditions()).toEqual([savedCondition]);
   });
 
   it('rejects a file with no known sections', () => {

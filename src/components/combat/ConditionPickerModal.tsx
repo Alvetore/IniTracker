@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Condition, Combatant } from '../../types';
+import { Condition, Combatant, SavedCondition } from '../../types';
 import { STANDARD_CONDITIONS } from '../../utils/defaultData';
+import { Storage } from '../../utils/storage';
 import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
-import { X, Sparkles, Clock, Plus, Search, Check, AlertCircle } from 'lucide-react';
+import { X, Sparkles, Clock, Plus, Search, Check, AlertCircle, Trash2, Bookmark } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -31,6 +32,27 @@ const CONDITION_COLORS = [
   '#3b82f6',
 ];
 
+const CONDITION_ICONS = [
+  '☠️',
+  '🔥',
+  '❄️',
+  '⚡',
+  '💫',
+  '😵',
+  '🩸',
+  '🛡️',
+  '✨',
+  '💤',
+  '🌀',
+  '🕸️',
+  '🙈',
+  '💗',
+  '🔇',
+  '😱',
+  '👻',
+  '🧠',
+];
+
 function formatRounds(rounds: number | null): string {
   if (rounds === null) return 'Бессрочно';
   const mod10 = rounds % 10;
@@ -53,7 +75,9 @@ export const ConditionPickerModal: React.FC<Props> = ({
   const [customName, setCustomName] = useState('');
   const [durationRounds, setDurationRounds] = useState<number | null>(null);
   const [selectedColor, setSelectedColor] = useState('#8b5cf6');
+  const [selectedIcon, setSelectedIcon] = useState('');
   const [notes, setNotes] = useState('');
+  const [savedConditions, setSavedConditions] = useState<SavedCondition[]>([]);
 
   // Reset the form between openings and when switching to another combatant.
   useEffect(() => {
@@ -63,7 +87,9 @@ export const ConditionPickerModal: React.FC<Props> = ({
       setCustomName('');
       setDurationRounds(null);
       setSelectedColor('#8b5cf6');
+      setSelectedIcon('');
       setNotes('');
+      setSavedConditions(Storage.getCustomConditions());
     }
   }, [isOpen, combatant?.id]);
 
@@ -84,10 +110,50 @@ export const ConditionPickerModal: React.FC<Props> = ({
   const isAlreadyActive = combatant.conditions.some(
     (condition) => condition.name.toLowerCase() === finalName.toLowerCase()
   );
+  const isStandardCondition = STANDARD_CONDITIONS.some(
+    (condition) => condition.name === finalName
+  );
 
-  const handleSelectStandard = (condition: { name: string; color: string }) => {
+  const applySavedCondition = (saved: SavedCondition) => {
+    setSelectedName('');
+    setCustomName(saved.name);
+    setSelectedColor(saved.color);
+    setSelectedIcon(saved.icon || '');
+    setDurationRounds(saved.defaultDuration ?? null);
+    setNotes(saved.notes || '');
+  };
+
+  const removeSavedCondition = (id: string) => {
+    const next = savedConditions.filter((condition) => condition.id !== id);
+    setSavedConditions(next);
+    Storage.saveCustomConditions(next);
+  };
+
+  const saveCustomCondition = () => {
+    if (!finalName || isStandardCondition) return;
+
+    const existing = savedConditions.find(
+      (condition) => condition.name.toLowerCase() === finalName.toLowerCase()
+    );
+    const entry: SavedCondition = {
+      id: existing?.id || `saved-cond-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      name: finalName,
+      color: selectedColor,
+      icon: selectedIcon || undefined,
+      defaultDuration: durationRounds,
+      notes: notes.trim() || undefined,
+      createdAt: existing?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    };
+    const next = [entry, ...savedConditions.filter((condition) => condition.id !== entry.id)];
+    setSavedConditions(next);
+    Storage.saveCustomConditions(next);
+  };
+
+  const handleSelectStandard = (condition: { name: string; color: string; icon: string }) => {
     setSelectedName(condition.name);
     setSelectedColor(condition.color);
+    setSelectedIcon(condition.icon);
     setCustomName('');
   };
 
@@ -116,9 +182,11 @@ export const ConditionPickerModal: React.FC<Props> = ({
       name: finalName,
       roundsRemaining: durationRounds,
       color: selectedColor,
+      icon: selectedIcon || undefined,
       notes: notes.trim() || undefined,
     };
 
+    saveCustomCondition();
     onAddCondition(combatant.id, newCondition);
     onClose();
   };
@@ -176,6 +244,7 @@ export const ConditionPickerModal: React.FC<Props> = ({
                         color: condition.color || '#cbd5e1',
                       }}
                     >
+                      {condition.icon && <span aria-hidden>{condition.icon}</span>}
                       {condition.name}
                       {condition.roundsRemaining !== null && (
                         <span className="font-bold text-[9px] bg-black/40 px-1 rounded">
@@ -183,6 +252,49 @@ export const ConditionPickerModal: React.FC<Props> = ({
                         </span>
                       )}
                     </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Saved custom conditions */}
+            {savedConditions.length > 0 && (
+              <div>
+                <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <Bookmark className="w-3.5 h-3.5 text-fuchsia-400" /> Мои состояния
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                  {savedConditions.map((saved) => (
+                    <div
+                      key={saved.id}
+                      className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-950/70 overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => applySavedCondition(saved)}
+                        className="min-h-8 flex items-center gap-1.5 px-2 py-1.5 text-[11px] text-slate-200 hover:bg-slate-800 transition"
+                        title="Подставить в форму"
+                      >
+                        {saved.icon ? (
+                          <span aria-hidden>{saved.icon}</span>
+                        ) : (
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: saved.color }}
+                          />
+                        )}
+                        <span>{saved.name}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSavedCondition(saved.id)}
+                        aria-label={`Удалить сохранённое состояние ${saved.name}`}
+                        className="min-h-8 min-w-8 p-2 text-slate-500 hover:text-red-400 hover:bg-red-950/40 transition"
+                        title="Удалить из библиотеки"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -227,16 +339,22 @@ export const ConditionPickerModal: React.FC<Props> = ({
                       key={condition.name}
                       type="button"
                       onClick={() => handleSelectStandard(condition)}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition flex items-center gap-2 border ${
+                      className={`min-h-8 px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition flex items-center gap-2 border ${
                         isSelected
                           ? 'border-amber-400 bg-slate-800 text-white ring-1 ring-amber-400'
                           : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'
                       }`}
                     >
                       <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: condition.color }}
-                      />
+                        aria-hidden
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-sm shrink-0"
+                        style={{
+                          backgroundColor: `${condition.color}20`,
+                          color: condition.color,
+                        }}
+                      >
+                        {condition.icon}
+                      </span>
                       <span className="truncate flex-1">{condition.name}</span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                       {!isSelected && isActive && (
@@ -276,6 +394,70 @@ export const ConditionPickerModal: React.FC<Props> = ({
               />
             </div>
 
+            {/* Icon and color */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Иконка
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIcon('')}
+                    aria-label="Без иконки"
+                    aria-pressed={selectedIcon === ''}
+                    className={`w-8 h-8 rounded-lg border text-[11px] transition ${
+                      selectedIcon === ''
+                        ? 'border-amber-400 bg-amber-500/20 text-amber-300'
+                        : 'border-slate-700 bg-slate-950/60 text-slate-500 hover:text-slate-200'
+                    }`}
+                  >
+                    —
+                  </button>
+                  {CONDITION_ICONS.map((icon) => (
+                    <button
+                      key={icon}
+                      type="button"
+                      onClick={() => setSelectedIcon(icon)}
+                      aria-label={`Иконка ${icon}`}
+                      aria-pressed={selectedIcon === icon}
+                      className={`w-8 h-8 rounded-lg border text-sm transition ${
+                        selectedIcon === icon
+                          ? 'border-amber-400 bg-amber-500/20 ring-1 ring-amber-400'
+                          : 'border-slate-700 bg-slate-950/60 hover:border-slate-600'
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Цвет
+                </label>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {CONDITION_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setSelectedColor(color)}
+                      aria-label={`Цвет ${color}`}
+                      aria-pressed={selectedColor === color}
+                      title={color}
+                      className={`w-7 h-7 rounded-full border-2 transition ${
+                        selectedColor === color
+                          ? 'border-white ring-2 ring-amber-400/70 scale-110'
+                          : 'border-slate-700 hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Duration */}
             <div>
               <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
@@ -289,7 +471,7 @@ export const ConditionPickerModal: React.FC<Props> = ({
                     onClick={() => setDurationRounds(preset.value)}
                     aria-label={preset.value === null ? 'Бессрочно' : formatRounds(preset.value)}
                     aria-pressed={durationRounds === preset.value}
-                    className={`min-w-[42px] py-1.5 px-2 rounded-lg text-xs font-semibold border transition ${
+                    className={`min-h-8 min-w-[42px] py-1.5 px-2 rounded-lg text-xs font-semibold border transition ${
                       durationRounds === preset.value
                         ? 'border-amber-500 bg-amber-500/20 text-amber-300'
                         : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'
@@ -312,31 +494,6 @@ export const ConditionPickerModal: React.FC<Props> = ({
                   />
                   <span className="text-[10px] text-slate-500">раундов</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Color */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                Цвет
-              </label>
-              <div className="flex flex-wrap items-center gap-2">
-                {CONDITION_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setSelectedColor(color)}
-                    aria-label={`Цвет ${color}`}
-                    aria-pressed={selectedColor === color}
-                    title={color}
-                    className={`w-6 h-6 rounded-full border-2 transition ${
-                      selectedColor === color
-                        ? 'border-white ring-2 ring-amber-400/70 scale-110'
-                        : 'border-slate-700 hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
               </div>
             </div>
 
@@ -365,10 +522,14 @@ export const ConditionPickerModal: React.FC<Props> = ({
               {finalName ? (
                 <>
                   <div className="flex items-center gap-2 text-xs min-w-0">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: selectedColor }}
-                    />
+                    {selectedIcon ? (
+                      <span className="shrink-0 text-sm" aria-hidden>{selectedIcon}</span>
+                    ) : (
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: selectedColor }}
+                      />
+                    )}
                     <span className="font-semibold text-white truncate">{finalName}</span>
                     <span className="text-slate-500 shrink-0">· {durationLabel}</span>
                   </div>

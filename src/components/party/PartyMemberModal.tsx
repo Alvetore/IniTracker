@@ -99,7 +99,7 @@ export const PartyMemberModal: React.FC<Props> = ({
         aria-modal="true"
         aria-label={initialMember ? 'Редактировать героя' : 'Новый персонаж игрока'}
         tabIndex={-1}
-        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-auto focus:outline-none"
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto focus:outline-none"
       >
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
@@ -127,7 +127,7 @@ export const PartyMemberModal: React.FC<Props> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-3.5 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 sm:space-y-4">
           {error && (
             <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-red-300 text-sm">
               ⚠️ {error}

@@ -73,4 +73,17 @@ describe('EditCombatantModal', () => {
       })
     );
   });
+
+  it('saves whether notes should be open by default', async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderModal();
+
+    await user.click(screen.getByLabelText('Показывать заметку сразу'));
+    await user.click(screen.getByRole('button', { name: /Сохранить изменения/ }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      'c-1',
+      expect.objectContaining({ notesVisibleByDefault: true })
+    );
+  });
 });

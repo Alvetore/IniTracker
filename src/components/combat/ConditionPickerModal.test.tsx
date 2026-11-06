@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConditionPickerModal } from './ConditionPickerModal';
 import { Combatant } from '../../types';
+import { Storage } from '../../utils/storage';
 
 const combatant: Combatant = {
   id: 'c-1',
@@ -56,6 +57,7 @@ describe('ConditionPickerModal', () => {
         name: 'Отравлен (Poisoned)',
         roundsRemaining: 5,
         color: '#22c55e',
+        icon: '☠️',
       })
     );
     expect(onClose).toHaveBeenCalled();
@@ -70,6 +72,7 @@ describe('ConditionPickerModal', () => {
       target: { value: '4' },
     });
     await user.click(screen.getByLabelText('Цвет #ef4444'));
+    await user.click(screen.getByLabelText('Иконка 🔥'));
     await user.type(screen.getByLabelText('Примечание'), '1d4 огня в начале хода');
     await user.click(screen.getByRole('button', { name: /Наложить статус/ }));
 
@@ -79,7 +82,48 @@ describe('ConditionPickerModal', () => {
         name: 'Горит',
         roundsRemaining: 4,
         color: '#ef4444',
+        icon: '🔥',
         notes: '1d4 огня в начале хода',
+      })
+    );
+    expect(Storage.getCustomConditions()).toEqual([
+      expect.objectContaining({
+        name: 'Горит',
+        color: '#ef4444',
+        icon: '🔥',
+        defaultDuration: 4,
+        notes: '1d4 огня в начале хода',
+      }),
+    ]);
+  });
+
+  it('reuses a saved custom condition from the library', async () => {
+    const user = userEvent.setup();
+    Storage.saveCustomConditions([
+      {
+        id: 'saved-1',
+        name: 'Горит',
+        color: '#ef4444',
+        icon: '🔥',
+        defaultDuration: 3,
+        notes: '1d4 огня',
+        createdAt: 1,
+      },
+    ]);
+    const { onAddCondition } = renderModal();
+
+    expect(screen.getByText('Мои состояния')).toBeInTheDocument();
+    await user.click(screen.getByTitle('Подставить в форму'));
+    await user.click(screen.getByRole('button', { name: /Наложить статус/ }));
+
+    expect(onAddCondition).toHaveBeenCalledWith(
+      'c-1',
+      expect.objectContaining({
+        name: 'Горит',
+        roundsRemaining: 3,
+        color: '#ef4444',
+        icon: '🔥',
+        notes: '1d4 огня',
       })
     );
   });

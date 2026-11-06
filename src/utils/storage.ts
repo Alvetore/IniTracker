@@ -4,6 +4,7 @@ import {
   Encounter,
   ActiveCombatState,
   AppDataExport,
+  SavedCondition,
 } from '../types';
 import {
   DEFAULT_TEMPLATES,
@@ -17,6 +18,7 @@ const STORAGE_KEYS = {
   PARTY: 'dnd_init_party_v1',
   ENCOUNTERS: 'dnd_init_encounters_v1',
   COMBAT: 'dnd_init_combat_v1',
+  CUSTOM_CONDITIONS: 'dnd_init_custom_conditions_v1',
 };
 
 // Safe JSON Parse
@@ -92,6 +94,14 @@ export const Storage = {
     safeSave(STORAGE_KEYS.ENCOUNTERS, encounters);
   },
 
+  getCustomConditions(): SavedCondition[] {
+    return safeParse<SavedCondition[]>(STORAGE_KEYS.CUSTOM_CONDITIONS, []);
+  },
+
+  saveCustomConditions(conditions: SavedCondition[]): void {
+    safeSave(STORAGE_KEYS.CUSTOM_CONDITIONS, conditions);
+  },
+
   getCombatState(): ActiveCombatState | null {
     return safeParse<ActiveCombatState | null>(STORAGE_KEYS.COMBAT, null);
   },
@@ -107,6 +117,7 @@ export const Storage = {
       templates: this.getTemplates(),
       party: this.getParty(),
       encounters: this.getEncounters(),
+      customConditions: this.getCustomConditions(),
       // Keep the key even when there is no active combat: on import an explicit
       // null means "clear the current fight", while a missing key would keep it.
       activeCombat: this.getCombatState(),
@@ -121,13 +132,13 @@ export const Storage = {
         return { success: false, error: 'Неверный формат JSON файла' };
       }
 
-      const hasKnownSection = ['templates', 'party', 'encounters', 'activeCombat'].some(
+      const hasKnownSection = ['templates', 'party', 'encounters', 'activeCombat', 'customConditions'].some(
         (key) => key in parsed
       );
       if (!hasKnownSection) {
         return {
           success: false,
-          error: 'В файле нет ни одного известного раздела (templates, party, encounters, activeCombat)',
+          error: 'В файле нет ни одного известного раздела (templates, party, encounters, activeCombat, customConditions)',
         };
       }
 
@@ -148,6 +159,10 @@ export const Storage = {
         [
           STORAGE_KEYS.ENCOUNTERS,
           JSON.stringify(Array.isArray(data.encounters) ? data.encounters : []),
+        ],
+        [
+          STORAGE_KEYS.CUSTOM_CONDITIONS,
+          JSON.stringify(Array.isArray(data.customConditions) ? data.customConditions : []),
         ],
         [STORAGE_KEYS.COMBAT, JSON.stringify(data.activeCombat ?? null)],
       ];
@@ -186,5 +201,6 @@ export const Storage = {
     this.saveParty(DEFAULT_PARTY);
     this.saveEncounters(DEFAULT_ENCOUNTERS);
     this.saveCombatState(null);
+    this.saveCustomConditions([]);
   },
 };

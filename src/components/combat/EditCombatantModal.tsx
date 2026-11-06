@@ -28,6 +28,7 @@ export const EditCombatantModal: React.FC<Props> = ({
   const [tempHp, setTempHp] = useState<number>(0);
   const [armorClass, setArmorClass] = useState<string | number>(10);
   const [notes, setNotes] = useState('');
+  const [notesVisibleByDefault, setNotesVisibleByDefault] = useState(false);
   const [isDelayed, setIsDelayed] = useState(false);
   const [isDefeated, setIsDefeated] = useState(false);
 
@@ -42,6 +43,7 @@ export const EditCombatantModal: React.FC<Props> = ({
       setTempHp(combatant.hp.temp ?? 0);
       setArmorClass(combatant.armorClass);
       setNotes(combatant.notes || '');
+      setNotesVisibleByDefault(Boolean(combatant.notesVisibleByDefault));
       setIsDelayed(combatant.isDelayed || false);
       setIsDefeated(combatant.isDefeated || false);
     }
@@ -74,6 +76,7 @@ export const EditCombatantModal: React.FC<Props> = ({
         temp: Math.max(0, tempHp),
       },
       notes,
+      notesVisibleByDefault,
       isDelayed,
       isDefeated: safeCurrentHp <= 0 ? true : isDefeated,
     });
@@ -304,6 +307,21 @@ export const EditCombatantModal: React.FC<Props> = ({
               placeholder="Особые атаки, ауры, резисты, подсказки для ведущего..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
             />
+            <label className="mt-2 flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer text-xs text-slate-300">
+              <input
+                type="checkbox"
+                checked={notesVisibleByDefault}
+                onChange={(e) => setNotesVisibleByDefault(e.target.checked)}
+                aria-label="Показывать заметку сразу"
+                className="rounded border-slate-700 text-amber-500 focus:ring-0 w-4 h-4"
+              />
+              <span>
+                Показывать заметку сразу
+                <span className="block text-[10px] text-slate-500">
+                  В трекере боя заметка будет раскрыта по умолчанию
+                </span>
+              </span>
+            </label>
           </div>
 
           {/* Footer */}

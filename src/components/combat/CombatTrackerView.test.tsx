@@ -187,4 +187,42 @@ describe('CombatTrackerView turn handling', () => {
     expect(added?.initiative).toBe(14);
     expect(added?.initiativeModifier).toBe(3);
   });
+
+  it('opens notes by default when the combatant is configured that way', async () => {
+    const user = userEvent.setup();
+    const noteText = 'Скрытая атака: 2d6';
+    const combatantWithNotes = combatant({
+      id: 'notes',
+      name: 'Болтливый NPC',
+      notes: noteText,
+      notesVisibleByDefault: true,
+    });
+    renderTracker(
+      state({ isActive: true, currentTurnIndex: 0, combatants: [combatantWithNotes] })
+    );
+
+    expect(screen.getByText(noteText)).toBeInTheDocument();
+    await user.click(screen.getByTitle('Заметки (открыты по умолчанию)'));
+    expect(screen.queryByText(noteText)).not.toBeInTheDocument();
+
+    await user.click(screen.getByTitle('Заметки (открыты по умолчанию)'));
+    expect(screen.getByText(noteText)).toBeInTheDocument();
+  });
+
+  it('keeps notes closed by default unless requested', async () => {
+    const user = userEvent.setup();
+    const noteText = 'Аура страха';
+    const combatantWithNotes = combatant({
+      id: 'notes',
+      name: 'Молчаливый NPC',
+      notes: noteText,
+    });
+    renderTracker(
+      state({ isActive: true, currentTurnIndex: 0, combatants: [combatantWithNotes] })
+    );
+
+    expect(screen.queryByText(noteText)).not.toBeInTheDocument();
+    await user.click(screen.getByTitle('Заметки'));
+    expect(screen.getByText(noteText)).toBeInTheDocument();
+  });
 });

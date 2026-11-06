@@ -135,6 +135,40 @@ describe('validateImportData', () => {
     );
   });
 
+  it('accepts custom condition library entries with icons and durations', () => {
+    expect(
+      validateImportData({
+        customConditions: [
+          {
+            id: 'saved-1',
+            name: 'Горит',
+            color: '#ef4444',
+            icon: '🔥',
+            defaultDuration: 2,
+            notes: '1d4 огня',
+            createdAt: 1,
+          },
+        ],
+      })
+    ).toEqual([]);
+
+    expect(
+      validateImportData({
+        customConditions: [{ id: 'saved-1', name: 'Горит', createdAt: 1 }],
+      })
+    ).toContain('customConditions[0].color: ожидалась строка');
+  });
+
+  it('validates the notes visibility flag', () => {
+    expect(
+      validateImportData({ templates: [{ notesVisibleByDefault: true }] })
+    ).not.toContain('templates[0].notesVisibleByDefault: ожидалось boolean');
+
+    expect(
+      validateImportData({ templates: [{ notesVisibleByDefault: 'yes' }] })
+    ).toContain('templates[0].notesVisibleByDefault: ожидалось boolean');
+  });
+
   it('rejects a non-object root', () => {
     expect(validateImportData([])).toEqual(['Корень файла должен быть объектом']);
   });
