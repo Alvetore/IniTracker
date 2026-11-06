@@ -1136,7 +1136,7 @@ export const CombatTrackerView: React.FC<Props> = ({
             )}
 
             {/* Additional Combat Bar Tools */}
-            <div className="flex items-center justify-between md:justify-end gap-2 w-full md:w-auto pt-1 md:pt-0 border-t md:border-t-0 border-slate-800">
+            <div className="flex flex-wrap items-center justify-between md:justify-end gap-1.5 sm:gap-2 w-full md:w-auto pt-1 md:pt-0 border-t md:border-t-0 border-slate-800">
               <button
                 onClick={() => setShowDefeated(!showDefeated)}
                 className={`flex-1 md:flex-initial py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
@@ -1147,7 +1147,8 @@ export const CombatTrackerView: React.FC<Props> = ({
                 title={showDefeated ? 'Скрыть поверженных' : 'Показать поверженных'}
               >
                 {showDefeated ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                <span>Поверженные</span>
+                <span className="hidden min-[360px]:inline">Поверженные</span>
+                <span className="min-[360px]:hidden">Поверж.</span>
               </button>
 
               <button
@@ -1169,6 +1170,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                 title="Пересортировать всех участников по инициативе (текущий ход сохранится)"
               >
                 <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
+                <span className="sm:hidden">Сорт.</span>
                 <span className="hidden sm:inline">Сортировать</span>
               </button>
 
@@ -1426,7 +1428,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
                         <button
                           onClick={() => setConditionModalCombatant(combatant)}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-1 transition"
+                          className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-1 transition"
                         >
                           <Plus className="w-3 h-3 text-amber-400" />
                           <span>Статус</span>
@@ -1434,10 +1436,10 @@ export const CombatTrackerView: React.FC<Props> = ({
                       </div>
 
                       {/* Defeated & Delayed toggles */}
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-1 min-[360px]:gap-1.5 shrink-0">
                         <button
                           onClick={() => handleToggleDelay(combatant.id)}
-                          className={`p-2 rounded-lg text-xs transition ${
+                          className={`p-2 min-[360px]:p-2.5 rounded-lg text-xs transition ${
                             combatant.isDelayed
                               ? 'bg-purple-950 text-purple-300 border border-purple-800'
                               : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
@@ -1451,7 +1453,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                           onClick={() =>
                             handleUpdateCombatant(combatant.id, { isDefeated: !combatant.isDefeated })
                           }
-                          className={`p-2 rounded-lg text-xs transition ${
+                          className={`p-2 min-[360px]:p-2.5 rounded-lg text-xs transition ${
                             combatant.isDefeated
                               ? 'bg-red-950 text-red-400 border border-red-800'
                               : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
@@ -1468,7 +1470,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                                 expandedNotesId === combatant.id ? null : combatant.id
                               )
                             }
-                            className={`p-2 rounded-lg text-xs transition ${
+                            className={`p-2 min-[360px]:p-2.5 rounded-lg text-xs transition ${
                               expandedNotesId === combatant.id
                                 ? 'bg-amber-500/20 text-amber-300'
                                 : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
@@ -1481,7 +1483,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
                         <button
                           onClick={() => setEditingCombatant(combatant)}
-                          className="p-2 text-slate-500 hover:text-amber-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
+                          className="p-2 min-[360px]:p-2.5 text-slate-500 hover:text-amber-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
                           title="Редактировать участника (имя, инициатива, HP, КД, заметки)"
                         >
                           <Pencil className="w-4 h-4" />
@@ -1489,7 +1491,7 @@ export const CombatTrackerView: React.FC<Props> = ({
 
                         <button
                           onClick={() => handleRemoveCombatant(combatant.id)}
-                          className="p-2 text-slate-500 hover:text-red-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
+                          className="p-2 min-[360px]:p-2.5 text-slate-500 hover:text-red-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
                           title="Удалить из боя"
                         >
                           <Trash2 className="w-4 h-4" />

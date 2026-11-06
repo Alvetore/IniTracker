@@ -655,7 +655,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-900 bg-slate-950/80 px-4 py-4 text-center text-xs text-slate-500">
         <p>
           НРИ Трекер Инициативы & Энкаунтеров • Развернуто для GitHub Pages • Все данные сохраняются локально в вашем браузере
         </p>

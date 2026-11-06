@@ -282,10 +282,10 @@ export const EncountersView: React.FC<Props> = ({
                 <div className="pt-3 border-t border-slate-800 flex items-center gap-2">
                   <button
                     onClick={() => onStartCombat(encounter)}
-                    className="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2 group-hover:shadow-amber-500/20"
+                    className="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2 whitespace-nowrap group-hover:shadow-amber-500/20"
                   >
                     <Play className="w-4 h-4 fill-current" />
-                    Запустить этот бой
+                    Начать бой
                   </button>
 
                   {isCombatActive && (

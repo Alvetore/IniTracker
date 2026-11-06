@@ -216,7 +216,7 @@ export const ConditionPickerModal: React.FC<Props> = ({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1 mt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-none sm:max-h-52 overflow-y-auto pr-1 mt-2">
                 {filteredConditions.map((condition) => {
                   const isSelected = selectedName === condition.name;
                   const isActive = combatant.conditions.some(
