@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Condition, Combatant } from '../../types';
 import { STANDARD_CONDITIONS } from '../../utils/defaultData';
 import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
-import { X, Sparkles, Clock, Plus } from 'lucide-react';
+import { X, Sparkles, Clock, Plus, Search, Check, AlertCircle } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -11,21 +11,54 @@ interface Props {
   onAddCondition: (combatantId: string, condition: Condition) => void;
 }
 
+const DURATION_PRESETS: Array<{ label: string; value: number | null }> = [
+  { label: 'Бессрочно', value: null },
+  { label: '1', value: 1 },
+  { label: '2', value: 2 },
+  { label: '3', value: 3 },
+  { label: '5', value: 5 },
+  { label: '10', value: 10 },
+];
+
+const CONDITION_COLORS = [
+  '#8b5cf6',
+  '#ef4444',
+  '#f59e0b',
+  '#22c55e',
+  '#06b6d4',
+  '#ec4899',
+  '#64748b',
+  '#3b82f6',
+];
+
+function formatRounds(rounds: number | null): string {
+  if (rounds === null) return 'Бессрочно';
+  const mod10 = rounds % 10;
+  const mod100 = rounds % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${rounds} раунд`;
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) {
+    return `${rounds} раунда`;
+  }
+  return `${rounds} раундов`;
+}
+
 export const ConditionPickerModal: React.FC<Props> = ({
   isOpen,
   onClose,
   combatant,
   onAddCondition,
 }) => {
+  const [search, setSearch] = useState('');
   const [selectedName, setSelectedName] = useState('');
   const [customName, setCustomName] = useState('');
-  const [durationRounds, setDurationRounds] = useState<number | null>(null); // null = infinite
+  const [durationRounds, setDurationRounds] = useState<number | null>(null);
   const [selectedColor, setSelectedColor] = useState('#8b5cf6');
   const [notes, setNotes] = useState('');
 
   // Reset the form between openings and when switching to another combatant.
   useEffect(() => {
     if (isOpen) {
+      setSearch('');
       setSelectedName('');
       setCustomName('');
       setDurationRounds(null);
@@ -36,20 +69,49 @@ export const ConditionPickerModal: React.FC<Props> = ({
 
   const dialogRef = useDialogAccessibility(isOpen, onClose);
 
+  const filteredConditions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return STANDARD_CONDITIONS;
+    return STANDARD_CONDITIONS.filter((condition) =>
+      condition.name.toLowerCase().includes(query)
+    );
+  }, [search]);
+
   if (!isOpen || !combatant) return null;
 
-  const handleSelectStandard = (cond: { name: string; color: string }) => {
-    setSelectedName(cond.name);
-    setSelectedColor(cond.color);
+  const finalName = (customName.trim() || selectedName).trim();
+  const durationLabel = formatRounds(durationRounds);
+  const isAlreadyActive = combatant.conditions.some(
+    (condition) => condition.name.toLowerCase() === finalName.toLowerCase()
+  );
+
+  const handleSelectStandard = (condition: { name: string; color: string }) => {
+    setSelectedName(condition.name);
+    setSelectedColor(condition.color);
     setCustomName('');
+  };
+
+  const handleCustomNameChange = (value: string) => {
+    setCustomName(value);
+    if (value) setSelectedName('');
+  };
+
+  const handleDurationInput = (value: string) => {
+    if (!value) {
+      setDurationRounds(null);
+      return;
+    }
+    const parsed = parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      setDurationRounds(Math.min(999, Math.max(1, parsed)));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalName = (customName.trim() || selectedName).trim();
     if (!finalName) return;
 
-    const newCond: Condition = {
+    const newCondition: Condition = {
       id: `cond-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: finalName,
       roundsRemaining: durationRounds,
@@ -57,146 +119,289 @@ export const ConditionPickerModal: React.FC<Props> = ({
       notes: notes.trim() || undefined,
     };
 
-    onAddCondition(combatant.id, newCond);
+    onAddCondition(combatant.id, newCondition);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={`Добавить состояние: ${combatant.name}`}
         tabIndex={-1}
-        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden focus:outline-none"
+        className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden focus:outline-none"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/90">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-white font-rpg">
-                Добавить состояние: {combatant.name}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-white font-rpg truncate">
+                Состояние: {combatant.name}
               </h3>
-              <p className="text-xs text-slate-400">Выберите стандартный эффект или введите свой</p>
+              <p className="text-xs text-slate-400">
+                Выберите готовое состояние или создайте своё
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Закрыть"
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 max-h-[80vh] overflow-y-auto">
-          {/* Standard Conditions Grid */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              Стандартные состояния
-            </label>
-            <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
-              {STANDARD_CONDITIONS.map((cond) => {
-                const isSelected = selectedName === cond.name;
-                return (
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-5 space-y-4">
+            {/* Already active conditions */}
+            {combatant.conditions.length > 0 && (
+              <div className="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Уже активно
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+                  {combatant.conditions.map((condition) => (
+                    <span
+                      key={condition.id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] border font-medium"
+                      style={{
+                        borderColor: `${condition.color || '#8b5cf6'}60`,
+                        backgroundColor: `${condition.color || '#8b5cf6'}20`,
+                        color: condition.color || '#cbd5e1',
+                      }}
+                    >
+                      {condition.name}
+                      {condition.roundsRemaining !== null && (
+                        <span className="font-bold text-[9px] bg-black/40 px-1 rounded">
+                          {condition.roundsRemaining}р
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Search */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                Стандартные состояния
+              </label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Поиск: отравлен, страх, invis..."
+                  aria-label="Поиск состояния"
+                  autoFocus
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-9 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                />
+                {search && (
                   <button
-                    key={cond.name}
                     type="button"
-                    onClick={() => handleSelectStandard(cond)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition flex items-center gap-2 border ${
-                      isSelected
-                        ? 'border-amber-400 bg-slate-800 text-white ring-1 ring-amber-400'
-                        : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'
+                    onClick={() => setSearch('')}
+                    aria-label="Очистить поиск"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1 mt-2">
+                {filteredConditions.map((condition) => {
+                  const isSelected = selectedName === condition.name;
+                  const isActive = combatant.conditions.some(
+                    (active) => active.name === condition.name
+                  );
+                  return (
+                    <button
+                      key={condition.name}
+                      type="button"
+                      onClick={() => handleSelectStandard(condition)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition flex items-center gap-2 border ${
+                        isSelected
+                          ? 'border-amber-400 bg-slate-800 text-white ring-1 ring-amber-400'
+                          : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: condition.color }}
+                      />
+                      <span className="truncate flex-1">{condition.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                      {!isSelected && isActive && (
+                        <span
+                          className="text-[9px] text-emerald-400 shrink-0"
+                          title="Уже активно"
+                        >
+                          уже
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+                {filteredConditions.length === 0 && (
+                  <div className="col-span-2 text-center py-5 text-xs text-slate-500">
+                    Ничего не найдено — введите своё состояние ниже.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Custom condition */}
+            <div>
+              <label
+                htmlFor="custom-condition-name"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5"
+              >
+                Или своё состояние / эффект
+              </label>
+              <input
+                id="custom-condition-name"
+                type="text"
+                value={customName}
+                onChange={(e) => handleCustomNameChange(e.target.value)}
+                placeholder="Например: Горит (1d4 огня), Метка охотника..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            {/* Duration */}
+            <div>
+              <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" /> Длительность
+              </label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {DURATION_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setDurationRounds(preset.value)}
+                    aria-label={preset.value === null ? 'Бессрочно' : formatRounds(preset.value)}
+                    aria-pressed={durationRounds === preset.value}
+                    className={`min-w-[42px] py-1.5 px-2 rounded-lg text-xs font-semibold border transition ${
+                      durationRounds === preset.value
+                        ? 'border-amber-500 bg-amber-500/20 text-amber-300'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'
                     }`}
                   >
+                    {preset.label}
+                    {preset.value !== null && ' р.'}
+                  </button>
+                ))}
+                <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1">
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={durationRounds ?? ''}
+                    onChange={(e) => handleDurationInput(e.target.value)}
+                    placeholder="∞"
+                    aria-label="Длительность в раундах"
+                    className="w-12 bg-transparent text-center text-xs font-bold text-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-500">раундов</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Color */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                Цвет
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                {CONDITION_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setSelectedColor(color)}
+                    aria-label={`Цвет ${color}`}
+                    aria-pressed={selectedColor === color}
+                    title={color}
+                    className={`w-6 h-6 rounded-full border-2 transition ${
+                      selectedColor === color
+                        ? 'border-white ring-2 ring-amber-400/70 scale-110'
+                        : 'border-slate-700 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label
+                htmlFor="condition-notes"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5"
+              >
+                Примечание
+              </label>
+              <input
+                id="condition-notes"
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Спасбросок в конце хода, эффект при получении..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="sticky bottom-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/95 backdrop-blur flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <div className="flex-1 min-w-0">
+              {finalName ? (
+                <>
+                  <div className="flex items-center gap-2 text-xs min-w-0">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: cond.color }}
+                      style={{ backgroundColor: selectedColor }}
                     />
-                    <span className="truncate">{cond.name}</span>
-                  </button>
-                );
-              })}
+                    <span className="font-semibold text-white truncate">{finalName}</span>
+                    <span className="text-slate-500 shrink-0">· {durationLabel}</span>
+                  </div>
+                  {isAlreadyActive && (
+                    <div className="flex items-center gap-1 text-[10px] text-amber-400 mt-0.5">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      Уже активно — будет добавлена вторая запись
+                    </div>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-slate-500">
+                  Выберите состояние или введите своё название
+                </span>
+              )}
             </div>
-          </div>
 
-          {/* Or Custom Condition */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              Или произвольное состояние / заклинание
-            </label>
-            <input
-              type="text"
-              value={customName}
-              onChange={(e) => {
-                setCustomName(e.target.value);
-                if (e.target.value) setSelectedName('');
-              }}
-              placeholder="Например: Горит (1d4 огня), Укрыт щитом, Метка охотника..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
-          {/* Duration in Rounds */}
-          <div>
-            <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              <Clock className="w-3.5 h-3.5 text-amber-400" /> Длительность эффекта
-            </label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {[
-                { label: 'Бессрочно', value: null },
-                { label: '1 раунд', value: 1 },
-                { label: '2 раунда', value: 2 },
-                { label: '3 раунда', value: 3 },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => setDurationRounds(item.value)}
-                  className={`py-1.5 rounded-lg text-xs font-semibold border transition ${
-                    durationRounds === item.value
-                      ? 'border-amber-500 bg-amber-500/20 text-amber-300'
-                      : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs"
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                disabled={!finalName}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold text-xs transition flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Наложить статус
+              </button>
             </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              Примечание (эффект при получении, спасбросок в конце хода)
-            </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Спасбросок Телосложения СЛ 14 в конце каждого хода..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
-          {/* Footer Actions */}
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs"
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              disabled={!selectedName && !customName.trim()}
-              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs transition flex items-center gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" /> Наложить статус
-            </button>
           </div>
         </form>
       </div>
