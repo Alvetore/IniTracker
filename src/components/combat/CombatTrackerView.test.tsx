@@ -225,4 +225,30 @@ describe('CombatTrackerView turn handling', () => {
     await user.click(screen.getByTitle('Заметки'));
     expect(screen.getByText(noteText)).toBeInTheDocument();
   });
+
+  it('toggles notes and actions independently', async () => {
+    const user = userEvent.setup();
+    const noteText = 'Тактика: держится сзади';
+    const actionText = 'Короткий лук: +4, 1d6+2';
+    const combatantWithDetails = combatant({
+      id: 'details',
+      name: 'Гоблин',
+      notes: noteText,
+      actionsAndAttacks: actionText,
+    });
+    renderTracker(
+      state({ isActive: true, currentTurnIndex: 0, combatants: [combatantWithDetails] })
+    );
+
+    expect(screen.queryByText(noteText)).not.toBeInTheDocument();
+    expect(screen.queryByText(actionText)).not.toBeInTheDocument();
+
+    await user.click(screen.getByTitle('Действия и атаки'));
+    expect(screen.getByText(actionText)).toBeInTheDocument();
+    expect(screen.queryByText(noteText)).not.toBeInTheDocument();
+
+    await user.click(screen.getByTitle('Заметки'));
+    expect(screen.getByText(noteText)).toBeInTheDocument();
+    expect(screen.getByText(actionText)).toBeInTheDocument();
+  });
 });

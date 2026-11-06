@@ -86,4 +86,22 @@ describe('EditCombatantModal', () => {
       expect.objectContaining({ notesVisibleByDefault: true })
     );
   });
+
+  it('saves notes and actions separately', async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderModal();
+
+    await user.type(screen.getByLabelText('Заметки'), 'Сидят в укрытии');
+    await user.type(screen.getByLabelText('Действия и атаки'), 'Короткий лук: +4');
+
+    await user.click(screen.getByRole('button', { name: /Сохранить изменения/ }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      'c-1',
+      expect.objectContaining({
+        notes: 'Сидят в укрытии',
+        actionsAndAttacks: 'Короткий лук: +4',
+      })
+    );
+  });
 });

@@ -74,6 +74,7 @@ function validateTemplates(value: unknown, errors: string[]): void {
     }
     optionalString(item.englishName, `${path}.englishName`, errors);
     optionalString(item.cr, `${path}.cr`, errors);
+    optionalString(item.actionsAndAttacks, `${path}.actionsAndAttacks`, errors);
     optionalString(item.sourceUrl, `${path}.sourceUrl`, errors);
     if (
       isString(item.sourceUrl) &&
@@ -193,6 +194,7 @@ function validateEncounters(value: unknown, errors: string[]): void {
       }
       optionalString(monster.templateId, `${monsterPath}.templateId`, errors);
       optionalString(monster.notes, `${monsterPath}.notes`, errors);
+      optionalString(monster.actionsAndAttacks, `${monsterPath}.actionsAndAttacks`, errors);
     });
   });
 }
@@ -272,6 +274,7 @@ function validateCombatants(value: unknown, errors: string[]): void {
       pushError(errors, `${path}.armorClass`, 'ожидалась строка или число');
     }
     requireString(combatant.notes, `${path}.notes`, errors);
+    optionalString(combatant.actionsAndAttacks, `${path}.actionsAndAttacks`, errors);
     if (typeof combatant.isDefeated !== 'boolean') {
       pushError(errors, `${path}.isDefeated`, 'ожидалось boolean');
     }

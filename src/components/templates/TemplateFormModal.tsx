@@ -43,6 +43,7 @@ export const TemplateFormModal: React.FC<Props> = ({
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [notes, setNotes] = useState('');
+  const [actionsAndAttacks, setActionsAndAttacks] = useState('');
   const [notesVisibleByDefault, setNotesVisibleByDefault] = useState(false);
   const [error, setError] = useState('');
 
@@ -60,6 +61,7 @@ export const TemplateFormModal: React.FC<Props> = ({
       setInitiativeModifier(initialTemplate.initiativeModifier);
       setTags([...initialTemplate.tags]);
       setNotes(initialTemplate.notes);
+      setActionsAndAttacks(initialTemplate.actionsAndAttacks || '');
       setNotesVisibleByDefault(Boolean(initialTemplate.notesVisibleByDefault));
     } else {
       // Default empty values for new template
@@ -75,6 +77,7 @@ export const TemplateFormModal: React.FC<Props> = ({
       setInitiativeModifier(0);
       setTags([]);
       setNotes('');
+      setActionsAndAttacks('');
       setNotesVisibleByDefault(false);
     }
     setError('');
@@ -126,6 +129,7 @@ export const TemplateFormModal: React.FC<Props> = ({
       initiativeModifier: Number(initiativeModifier),
       tags,
       notes: notes.trim(),
+      actionsAndAttacks: actionsAndAttacks.trim() || undefined,
       notesVisibleByDefault,
       cr: cr.trim() || undefined,
       edition: edition !== 'custom' ? edition : undefined,
@@ -390,33 +394,50 @@ export const TemplateFormModal: React.FC<Props> = ({
             )}
           </div>
 
-          {/* Notes / Actions / Attacks */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Действия, атаки и заметки мастера
-            </label>
-            <textarea
-              rows={4}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Атака: Длинный меч +5 (1d8+3 рубящего)&#10;Особое: Всплеск ярости, сопротивление к огню, уязвимость к серебру..."
-              className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-xs font-mono transition"
-            />
-            <label className="flex items-start gap-2 bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer text-xs text-slate-300">
-              <input
-                type="checkbox"
-                checked={notesVisibleByDefault}
-                onChange={(e) => setNotesVisibleByDefault(e.target.checked)}
-                aria-label="Показывать заметку сразу"
-                className="mt-0.5 rounded border-slate-700 text-amber-500 focus:ring-0 w-4 h-4"
+          {/* Notes and Actions */}
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Заметки мастера
+              </label>
+              <textarea
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                aria-label="Заметки мастера"
+                placeholder="Тактика, поведение, роли в сцене, подсказки ведущему..."
+                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-xs font-mono transition"
               />
-              <span>
-                Показывать заметку сразу
-                <span className="block text-[10px] text-slate-500">
-                  При добавлении в бой заметка будет раскрыта по умолчанию
+              <label className="flex items-start gap-2 bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer text-xs text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={notesVisibleByDefault}
+                  onChange={(e) => setNotesVisibleByDefault(e.target.checked)}
+                  aria-label="Показывать заметку сразу"
+                  className="mt-0.5 rounded border-slate-700 text-amber-500 focus:ring-0 w-4 h-4"
+                />
+                <span>
+                  Показывать заметку сразу
+                  <span className="block text-[10px] text-slate-500">
+                    При добавлении в бой заметка будет раскрыта по умолчанию
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Действия и атаки
+              </label>
+              <textarea
+                rows={4}
+                value={actionsAndAttacks}
+                onChange={(e) => setActionsAndAttacks(e.target.value)}
+                aria-label="Действия и атаки"
+                placeholder="Атака: Длинный меч +5 (1d8+3 рубящего)&#10;Особое: Всплеск ярости, сопротивление к огню..."
+                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-xs font-mono transition"
+              />
+            </div>
           </div>
 
           {/* Footer Actions */}

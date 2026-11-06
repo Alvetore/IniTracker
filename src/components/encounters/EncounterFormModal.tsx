@@ -41,6 +41,7 @@ export const EncounterFormModal: React.FC<Props> = ({
   const [customTag, setCustomTag] = useState('');
   const [monsters, setMonsters] = useState<EncounterMonster[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [expandedMonsterId, setExpandedMonsterId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export const EncounterFormModal: React.FC<Props> = ({
       setMonsters([]);
     }
     setSelectedTemplateId(templates.length > 0 ? templates[0].id : '');
+    setExpandedMonsterId(null);
     setError('');
   }, [initialEncounter, isOpen, templates]);
 
@@ -73,8 +75,15 @@ export const EncounterFormModal: React.FC<Props> = ({
     const tpl = templates.find((t) => t.id === targetId) || templates[0];
     if (!tpl) return;
 
-    // Check if monster with same template already exists in encounter
-    const existingIndex = monsters.findIndex((m) => m.templateId === tpl.id);
+    // Merge only a plain, untouched group. Custom per-instance notes/actions
+    // and split (numbered) entries must stay independent.
+    const existingIndex = monsters.findIndex(
+      (m) =>
+        m.templateId === tpl.id &&
+        m.name === tpl.name &&
+        (m.notes || '') === (tpl.notes || '') &&
+        (m.actionsAndAttacks || '') === (tpl.actionsAndAttacks || '')
+    );
     if (existingIndex !== -1) {
       const existingId = monsters[existingIndex].id;
       setMonsters(
@@ -95,6 +104,7 @@ export const EncounterFormModal: React.FC<Props> = ({
       armorClass: tpl.armorClass,
       initiativeModifier: tpl.initiativeModifier,
       notes: tpl.notes,
+      actionsAndAttacks: tpl.actionsAndAttacks,
     };
 
     setMonsters([...monsters, newMonster]);
@@ -111,6 +121,7 @@ export const EncounterFormModal: React.FC<Props> = ({
       armorClass: '13',
       initiativeModifier: 1,
       notes: '',
+      actionsAndAttacks: '',
     };
     setMonsters([...monsters, newMonster]);
   };
@@ -123,6 +134,26 @@ export const EncounterFormModal: React.FC<Props> = ({
 
   const handleRemoveMonster = (id: string) => {
     setMonsters(monsters.filter((m) => m.id !== id));
+    setExpandedMonsterId((current) => (current === id ? null : current));
+  };
+
+  const handleSplitMonster = (id: string) => {
+    const target = monsters.find((monster) => monster.id === id);
+    if (!target || target.count <= 1) return;
+
+    const baseName = target.name.replace(/\s+\d+$/, '').trim() || target.name;
+    const stamp = Date.now();
+    const copies: EncounterMonster[] = Array.from({ length: target.count }, (_, index) => ({
+      ...target,
+      id: `enc-m-${stamp}-${Math.random().toString(36).slice(2, 6)}-${index}`,
+      name: `${baseName} ${index + 1}`,
+      count: 1,
+      notes: target.notes || '',
+      actionsAndAttacks: target.actionsAndAttacks || '',
+    }));
+
+    setMonsters(monsters.flatMap((monster) => (monster.id === id ? copies : [monster])));
+    setExpandedMonsterId(copies[0]?.id ?? null);
   };
 
   const handleAddCustomTag = (e: React.FormEvent) => {
@@ -388,8 +419,8 @@ export const EncounterFormModal: React.FC<Props> = ({
             ) : (
               <div className="space-y-2">
                 {monsters.map((monster) => (
+                  <React.Fragment key={monster.id}>
                   <div
-                    key={monster.id}
                     className="p-3.5 bg-slate-950/80 border border-slate-800/90 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     {/* Name & Type */}
@@ -487,6 +518,24 @@ export const EncounterFormModal: React.FC<Props> = ({
                         />
                       </div>
 
+                      {/* Notes & actions toggle */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedMonsterId((current) =>
+                            current === monster.id ? null : monster.id
+                          )
+                        }
+                        className={`p-1.5 rounded-lg ml-1 transition ${
+                          expandedMonsterId === monster.id
+                            ? 'bg-amber-500/20 text-amber-300'
+                            : 'text-slate-500 hover:text-amber-400 hover:bg-slate-900'
+                        }`}
+                        title="Заметка и действия этого экземпляра"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+
                       {/* Remove */}
                       <button
                         type="button"
@@ -498,6 +547,57 @@ export const EncounterFormModal: React.FC<Props> = ({
                       </button>
                     </div>
                   </div>
+
+                  {expandedMonsterId === monster.id && (
+                    <div className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold uppercase tracking-wider text-amber-300 mb-1">
+                          Заметка для этого экземпляра
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={monster.notes || ''}
+                          onChange={(e) =>
+                            handleUpdateMonster(monster.id, { notes: e.target.value })
+                          }
+                          aria-label={`Заметка: ${monster.name}`}
+                          placeholder="Например: «В бою сразу», «Выходит на второй раунд», «Сидят в укрытии»..."
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1">
+                          Меняется только здесь и не затрагивает шаблон в бестиарии.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-rose-300 mb-1">
+                          <Sword className="w-3 h-3" /> Действия и атаки
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={monster.actionsAndAttacks || ''}
+                          onChange={(e) =>
+                            handleUpdateMonster(monster.id, { actionsAndAttacks: e.target.value })
+                          }
+                          aria-label={`Действия и атаки: ${monster.name}`}
+                          placeholder="Атаки, способности, реакции..."
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 font-mono"
+                        />
+                      </div>
+
+                      {monster.count > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleSplitMonster(monster.id)}
+                          className="w-full sm:w-auto px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition"
+                          title="Создать отдельные записи, чтобы задать каждому существу свою заметку"
+                        >
+                          Разделить на отдельные записи
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  </React.Fragment>
                 ))}
               </div>
             )}

@@ -39,6 +39,7 @@ import {
   FileText,
   Pencil,
   ArrowUpDown,
+  Swords,
 } from 'lucide-react';
 
 interface Props {
@@ -72,6 +73,7 @@ export const CombatTrackerView: React.FC<Props> = ({
   const [showDefeated, setShowDefeated] = useState(true);
   const [showLog, setShowLog] = useState(false);
   const [notesToggleOverrides, setNotesToggleOverrides] = useState<Record<string, boolean>>({});
+  const [actionsToggleOverrides, setActionsToggleOverrides] = useState<Record<string, boolean>>({});
 
   // Spacebar shortcut to advance turn
   useEffect(() => {
@@ -181,6 +183,9 @@ export const CombatTrackerView: React.FC<Props> = ({
       for (let i = 1; i <= m.count; i++) {
         const name = m.count > 1 ? `${m.name} ${i}` : m.name;
         const { total: initVal } = rollInitiativeForSystem(state.diceSystem, m.initiativeModifier);
+        const linkedTemplate = m.templateId
+          ? templates.find((template) => template.id === m.templateId)
+          : undefined;
 
         newCombatants.push({
           id: `enc-comb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
@@ -196,6 +201,8 @@ export const CombatTrackerView: React.FC<Props> = ({
           armorClass: m.armorClass,
           conditions: [],
           notes: m.notes || '',
+          actionsAndAttacks: m.actionsAndAttacks || linkedTemplate?.actionsAndAttacks,
+          notesVisibleByDefault: Boolean(linkedTemplate?.notesVisibleByDefault),
           isDefeated: false,
           isDelayed: false,
           templateId: m.templateId,
@@ -377,6 +384,12 @@ export const CombatTrackerView: React.FC<Props> = ({
       delete next[id];
       return next;
     });
+    setActionsToggleOverrides((previous) => {
+      if (!(id in previous)) return previous;
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
   };
 
   // Next Turn
@@ -551,6 +564,7 @@ export const CombatTrackerView: React.FC<Props> = ({
   const handleClearCombatants = () => {
     if (confirm('Очистить список участников боя?')) {
       setNotesToggleOverrides({});
+      setActionsToggleOverrides({});
       onUpdateCombatState(null);
     }
   };
@@ -1201,6 +1215,7 @@ export const CombatTrackerView: React.FC<Props> = ({
               const isNext = nextOnDeckIndex !== null && index === nextOnDeckIndex;
               const notesOpen =
                 notesToggleOverrides[combatant.id] ?? Boolean(combatant.notesVisibleByDefault);
+              const actionsOpen = actionsToggleOverrides[combatant.id] ?? false;
               const hpPercent = Math.max(
                 0,
                 Math.min(100, (combatant.hp.current / combatant.hp.max) * 100)
@@ -1478,6 +1493,25 @@ export const CombatTrackerView: React.FC<Props> = ({
                           💀
                         </button>
 
+                        {combatant.actionsAndAttacks && (
+                          <button
+                            onClick={() =>
+                              setActionsToggleOverrides((previous) => ({
+                                ...previous,
+                                [combatant.id]: !actionsOpen,
+                              }))
+                            }
+                            className={`p-2 min-[390px]:p-2.5 rounded-lg text-xs transition ${
+                              actionsOpen
+                                ? 'bg-rose-500/20 text-rose-300'
+                                : 'text-slate-500 hover:text-slate-300 bg-slate-900 sm:bg-transparent'
+                            }`}
+                            title="Действия и атаки"
+                          >
+                            <Swords className="w-4 h-4" />
+                          </button>
+                        )}
+
                         {combatant.notes && (
                           <button
                             onClick={() =>
@@ -1504,7 +1538,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                         <button
                           onClick={() => setEditingCombatant(combatant)}
                           className="p-2 min-[390px]:p-2.5 text-slate-500 hover:text-amber-400 rounded-lg transition bg-slate-900 sm:bg-transparent"
-                          title="Редактировать участника (имя, инициатива, HP, КД, заметки)"
+                          title="Редактировать участника (имя, инициатива, HP, КД, заметки и действия)"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -1520,12 +1554,12 @@ export const CombatTrackerView: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  {/* Expanded notes/attacks */}
+                  {/* Expanded notes */}
                   {notesOpen && combatant.notes && (
                     <div className="px-5 pb-4 pt-1 border-t border-slate-800/80 bg-slate-950/40 rounded-b-2xl text-xs text-slate-300 font-mono whitespace-pre-line max-h-40 sm:max-h-64 overflow-y-auto">
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-500 block">
-                          Способности и заметки:
+                        <span className="text-[10px] uppercase font-bold text-amber-400/90 block">
+                          Заметки:
                         </span>
                         {combatant.notesVisibleByDefault && (
                           <span className="text-[9px] text-amber-400/80 font-sans font-semibold uppercase tracking-wider">
@@ -1534,6 +1568,16 @@ export const CombatTrackerView: React.FC<Props> = ({
                         )}
                       </div>
                       {combatant.notes}
+                    </div>
+                  )}
+
+                  {/* Expanded actions & attacks */}
+                  {actionsOpen && combatant.actionsAndAttacks && (
+                    <div className="px-5 pb-4 pt-1 border-t border-slate-800/80 bg-rose-950/10 rounded-b-2xl text-xs text-slate-300 font-mono whitespace-pre-line max-h-48 sm:max-h-72 overflow-y-auto">
+                      <span className="text-[10px] uppercase font-bold text-rose-300/90 block mb-1">
+                        Действия и атаки:
+                      </span>
+                      {combatant.actionsAndAttacks}
                     </div>
                   )}
                 </div>

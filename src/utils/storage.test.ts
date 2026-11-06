@@ -134,6 +134,43 @@ describe('Storage defaults', () => {
     expect(store.has('dnd_init_templates_v1')).toBe(true);
   });
 
+  it('splits legacy notes and actions for untouched demo templates', () => {
+    store.set(
+      'dnd_init_templates_v1',
+      JSON.stringify([
+        {
+          ...template,
+          id: 'tpl-goblin-archer',
+          name: 'Гоблин-лучник',
+          notes:
+            'Короткий лук: +4 к атаке, 1d6+2 урона. Проворный побег (бонусное действие на Отход или Засаду).',
+        },
+      ])
+    );
+
+    const [migrated] = AppStorage.getTemplates();
+    expect(migrated.notes).toBe('Держится на дистанции и использует укрытие.');
+    expect(migrated.actionsAndAttacks).toContain('Короткий лук');
+    expect(AppStorage.getTemplates()[0].actionsAndAttacks).toContain('Проворный побег');
+  });
+
+  it('does not overwrite a demo template whose notes were edited', () => {
+    store.set(
+      'dnd_init_templates_v1',
+      JSON.stringify([
+        {
+          ...template,
+          id: 'tpl-goblin-archer',
+          name: 'Гоблин-лучник',
+          notes: 'Моя заметка',
+        },
+      ])
+    );
+
+    expect(AppStorage.getTemplates()[0].notes).toBe('Моя заметка');
+    expect(AppStorage.getTemplates()[0].actionsAndAttacks).toBeUndefined();
+  });
+
   it('keeps empty arrays instead of restoring demo data', () => {
     AppStorage.getTemplates();
     AppStorage.getParty();

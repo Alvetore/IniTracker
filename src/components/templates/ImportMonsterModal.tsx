@@ -159,7 +159,8 @@ export const ImportMonsterModal: React.FC<Props> = ({
       armorClass: parsed.armorClass,
       initiativeModifier: parsed.initiativeModifier,
       tags: parsed.tags,
-      notes: parsed.notes,
+      notes: '',
+      actionsAndAttacks: parsed.notes || undefined,
       cr: parsed.cr,
       edition,
       sourceUrl: edition === '5e24' ? 'https://next.dnd.su/bestiary/' : 'https://5e14.dnd.su/bestiary/',
@@ -481,18 +482,33 @@ export const ImportMonsterModal: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Notes */}
+              {/* Notes and actions */}
               <div>
                 <label className="text-[10px] uppercase font-semibold text-slate-400 block mb-1">
-                  Заметки / Особенности / Действия
+                  Заметки
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
+                  aria-label="Заметки"
                   value={previewTemplate.notes || ''}
                   onChange={(e) =>
                     setPreviewTemplate({ ...previewTemplate, notes: e.target.value })
                   }
                   className="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-300 font-mono focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-semibold text-rose-400 block mb-1">
+                  Действия и атаки
+                </label>
+                <textarea
+                  rows={3}
+                  aria-label="Действия и атаки"
+                  value={previewTemplate.actionsAndAttacks || ''}
+                  onChange={(e) =>
+                    setPreviewTemplate({ ...previewTemplate, actionsAndAttacks: e.target.value })
+                  }
+                  className="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-300 font-mono focus:outline-none focus:border-rose-500"
                 />
               </div>
             </div>

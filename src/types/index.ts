@@ -38,7 +38,8 @@ export interface CreatureTemplate {
   armorClass: string | number; // КД / Защита
   initiativeModifier: number; // +2, 0, -1
   tags: string[]; // ['Гоблиноид', 'Лучник']
-  notes: string; // Действия, статы, способности
+  notes: string; // Заметки мастера
+  actionsAndAttacks?: string; // Действия, атаки и способности
   cr?: string;
   edition?: '5e14' | '5e24' | 'custom';
   sourceUrl?: string;
@@ -70,6 +71,7 @@ export interface EncounterMonster {
   armorClass: string | number;
   initiativeModifier: number;
   notes?: string;
+  actionsAndAttacks?: string;
 }
 
 export interface Encounter {
@@ -98,6 +100,7 @@ export interface Combatant {
   armorClass: string | number;
   conditions: Condition[];
   notes: string;
+  actionsAndAttacks?: string;
   notesVisibleByDefault?: boolean;
   isDefeated: boolean; // повержен / без сознания
   isDelayed: boolean; // задержал ход

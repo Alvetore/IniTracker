@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Combatant, CreatureType, DiceSystem } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
 import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
-import { X, UserCheck, Shield, Heart, Zap, Dices, FileText, Check } from 'lucide-react';
+import { X, UserCheck, Shield, Heart, Zap, Dices, FileText, Check, Swords } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -28,6 +28,7 @@ export const EditCombatantModal: React.FC<Props> = ({
   const [tempHp, setTempHp] = useState<number>(0);
   const [armorClass, setArmorClass] = useState<string | number>(10);
   const [notes, setNotes] = useState('');
+  const [actionsAndAttacks, setActionsAndAttacks] = useState('');
   const [notesVisibleByDefault, setNotesVisibleByDefault] = useState(false);
   const [isDelayed, setIsDelayed] = useState(false);
   const [isDefeated, setIsDefeated] = useState(false);
@@ -43,6 +44,7 @@ export const EditCombatantModal: React.FC<Props> = ({
       setTempHp(combatant.hp.temp ?? 0);
       setArmorClass(combatant.armorClass);
       setNotes(combatant.notes || '');
+      setActionsAndAttacks(combatant.actionsAndAttacks || '');
       setNotesVisibleByDefault(Boolean(combatant.notesVisibleByDefault));
       setIsDelayed(combatant.isDelayed || false);
       setIsDefeated(combatant.isDefeated || false);
@@ -76,6 +78,7 @@ export const EditCombatantModal: React.FC<Props> = ({
         temp: Math.max(0, tempHp),
       },
       notes,
+      actionsAndAttacks: actionsAndAttacks.trim() || undefined,
       notesVisibleByDefault,
       isDelayed,
       isDefeated: safeCurrentHp <= 0 ? true : isDefeated,
@@ -294,17 +297,18 @@ export const EditCombatantModal: React.FC<Props> = ({
             </label>
           </div>
 
-          {/* Notes */}
+          {/* Notes and actions */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 mb-1">
               <FileText className="w-3.5 h-3.5 text-slate-400" />
-              Заметки и способности
+              Заметки
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Особые атаки, ауры, резисты, подсказки для ведущего..."
+              rows={2}
+              aria-label="Заметки"
+              placeholder="Тактика, поведение, подсказки ведущему..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
             />
             <label className="mt-2 flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer text-xs text-slate-300">
@@ -322,6 +326,21 @@ export const EditCombatantModal: React.FC<Props> = ({
                 </span>
               </span>
             </label>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 mb-1">
+              <Swords className="w-3.5 h-3.5 text-rose-400" />
+              Действия и атаки
+            </label>
+            <textarea
+              value={actionsAndAttacks}
+              onChange={(e) => setActionsAndAttacks(e.target.value)}
+              rows={3}
+              aria-label="Действия и атаки"
+              placeholder="Атаки, способности, реакции..."
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 font-mono"
+            />
           </div>
 
           {/* Footer */}

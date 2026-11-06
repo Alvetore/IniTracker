@@ -9,7 +9,8 @@ export const DEFAULT_TEMPLATES: CreatureTemplate[] = [
     armorClass: 15,
     initiativeModifier: 2,
     tags: ['Гоблиноид', 'Стрелок'],
-    notes: 'Короткий лук: +4 к атаке, 1d6+2 урона. Проворный побег (бонусное действие на Отход или Засаду).',
+    notes: 'Держится на дистанции и использует укрытие.',
+    actionsAndAttacks: 'Короткий лук: +4 к атаке, 1d6+2 урона.\nПроворный побег: бонусным действием Отход или Засада.',
     createdAt: Date.now() - 100000,
   },
   {
@@ -20,7 +21,8 @@ export const DEFAULT_TEMPLATES: CreatureTemplate[] = [
     armorClass: 13,
     initiativeModifier: 2,
     tags: ['Нежить', 'Пехота'],
-    notes: 'Короткий меч: +4 к атаке, 1d6+2 колющего. Уязвимость к дробящему урону, иммунитет к яду.',
+    notes: 'Нежить. Уязвим к дробящему урону, иммунитет к яду.',
+    actionsAndAttacks: 'Короткий меч: +4 к атаке, 1d6+2 колющего урона.',
     createdAt: Date.now() - 90000,
   },
   {
@@ -31,7 +33,8 @@ export const DEFAULT_TEMPLATES: CreatureTemplate[] = [
     armorClass: 11,
     initiativeModifier: -1,
     tags: ['Великан', 'Босс/Танк'],
-    notes: 'Большая дубина: +6 к атаке, 2d8+4 дробящего урона. Размашистый удар по области.',
+    notes: 'Атакует ближайшую цель, ломает укрытия.',
+    actionsAndAttacks: 'Большая дубина: +6 к атаке, 2d8+4 дробящего урона.\nРазмашистый удар по области.',
     createdAt: Date.now() - 80000,
   },
   {
@@ -42,7 +45,8 @@ export const DEFAULT_TEMPLATES: CreatureTemplate[] = [
     armorClass: 16,
     initiativeModifier: 1,
     tags: ['Гуманоид', 'Союзник'],
-    notes: 'Копье: +3 к атаке, 1d6+1 колющего. Стена щитов.',
+    notes: 'Держит строй и защищает союзников.',
+    actionsAndAttacks: 'Копье: +3 к атаке, 1d6+1 колющего урона.\nСтена щитов.',
     createdAt: Date.now() - 70000,
   },
 ];
@@ -119,6 +123,7 @@ export const DEFAULT_ENCOUNTERS: Encounter[] = [
         armorClass: 15,
         initiativeModifier: 2,
         notes: 'Сидят на уступах в укрытии (+2 к КД).',
+        actionsAndAttacks: 'Короткий лук: +4 к атаке, 1d6+2 урона.\nПроворный побег: бонусным действием Отход или Засада.',
       },
       {
         id: 'enc-m-2',
@@ -130,6 +135,7 @@ export const DEFAULT_ENCOUNTERS: Encounter[] = [
         armorClass: 11,
         initiativeModifier: -1,
         notes: 'Выходит из леса на 2-й раунд, ломая деревья.',
+        actionsAndAttacks: 'Большая дубина: +6 к атаке, 2d8+4 дробящего урона.\nРазмашистый удар по области.',
       },
     ],
   },

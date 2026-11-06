@@ -94,6 +94,7 @@ export const AddCombatantModal: React.FC<Props> = ({
           armorClass: tpl.armorClass,
           conditions: [],
           notes: tpl.notes,
+          actionsAndAttacks: tpl.actionsAndAttacks,
           notesVisibleByDefault: Boolean(tpl.notesVisibleByDefault),
           isDefeated: false,
           isDelayed: false,

@@ -38,6 +38,7 @@ import {
   UserRound,
   Crown,
   X,
+  FileText,
 } from 'lucide-react';
 
 /**
@@ -169,6 +170,7 @@ export const TemplatesView: React.FC<Props> = ({
         t.name.toLowerCase().includes(savedSearch.toLowerCase()) ||
         (t.englishName && t.englishName.toLowerCase().includes(savedSearch.toLowerCase())) ||
         t.notes.toLowerCase().includes(savedSearch.toLowerCase()) ||
+        t.actionsAndAttacks?.toLowerCase().includes(savedSearch.toLowerCase()) ||
         t.tags.some((tag) => tag.toLowerCase().includes(savedSearch.toLowerCase()));
 
       const matchesTag = selectedTag === null || t.tags.includes(selectedTag);
@@ -523,7 +525,7 @@ export const TemplatesView: React.FC<Props> = ({
                 type="text"
                 value={savedSearch}
                 onChange={(e) => setSavedSearch(e.target.value)}
-                placeholder="Поиск по имени, способностям или тегам..."
+                placeholder="Поиск по имени, заметкам, действиям или тегам..."
                 className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -740,10 +742,29 @@ export const TemplatesView: React.FC<Props> = ({
                         </div>
                       )}
 
-                      {/* Notes / Actions */}
-                      {template.notes && (
-                        <div className="bg-slate-950/40 rounded-xl p-3 border border-slate-800/50 text-xs text-slate-300 font-mono line-clamp-3 whitespace-pre-line mb-3">
-                          {template.notes}
+                      {/* Notes and Actions */}
+                      {(template.notes || template.actionsAndAttacks) && (
+                        <div className="space-y-2 mb-3">
+                          {template.notes && (
+                            <div className="bg-amber-950/20 rounded-xl p-2.5 border border-amber-900/30">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1 mb-1">
+                                <FileText className="w-3 h-3" /> Заметки
+                              </div>
+                              <div className="text-xs text-slate-300 font-mono line-clamp-2 whitespace-pre-line">
+                                {template.notes}
+                              </div>
+                            </div>
+                          )}
+                          {template.actionsAndAttacks && (
+                            <div className="bg-rose-950/20 rounded-xl p-2.5 border border-rose-900/30">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1 mb-1">
+                                <Swords className="w-3 h-3" /> Действия и атаки
+                              </div>
+                              <div className="text-xs text-slate-300 font-mono line-clamp-3 whitespace-pre-line">
+                                {template.actionsAndAttacks}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1204,6 +1225,9 @@ export const TemplatesView: React.FC<Props> = ({
                       </div>
 
                       {/* Actions / abilities preview */}
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1 mb-1">
+                        <Swords className="w-3 h-3" /> Действия и атаки
+                      </div>
                       <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/50 text-xs text-slate-300 font-mono line-clamp-3 whitespace-pre-line mb-4">
                         {monster.notes ||
                           'Нет описания способностей — откройте карточку, чтобы посмотреть статблок.'}

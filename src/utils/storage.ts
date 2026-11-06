@@ -21,6 +21,63 @@ const STORAGE_KEYS = {
   CUSTOM_CONDITIONS: 'dnd_init_custom_conditions_v1',
 };
 
+// Older demo templates stored tactical notes and attacks together. Split the
+// untouched demo records once so existing users get the new notes/actions UI.
+const LEGACY_DEFAULT_TEMPLATE_SPLITS: Record<
+  string,
+  { legacyNotes: string; notes: string; actionsAndAttacks: string }
+> = {
+  'tpl-goblin-archer': {
+    legacyNotes:
+      'Короткий лук: +4 к атаке, 1d6+2 урона. Проворный побег (бонусное действие на Отход или Засаду).',
+    notes: 'Держится на дистанции и использует укрытие.',
+    actionsAndAttacks:
+      'Короткий лук: +4 к атаке, 1d6+2 урона.\nПроворный побег: бонусным действием Отход или Засада.',
+  },
+  'tpl-skeleton': {
+    legacyNotes:
+      'Короткий меч: +4 к атаке, 1d6+2 колющего. Уязвимость к дробящему урону, иммунитет к яду.',
+    notes: 'Нежить. Уязвим к дробящему урону, иммунитет к яду.',
+    actionsAndAttacks: 'Короткий меч: +4 к атаке, 1d6+2 колющего урона.',
+  },
+  'tpl-ogre': {
+    legacyNotes:
+      'Большая дубина: +6 к атаке, 2d8+4 дробящего урона. Размашистый удар по области.',
+    notes: 'Атакует ближайшую цель, ломает укрытия.',
+    actionsAndAttacks:
+      'Большая дубина: +6 к атаке, 2d8+4 дробящего урона.\nРазмашистый удар по области.',
+  },
+  'tpl-guard-ally': {
+    legacyNotes: 'Копье: +3 к атаке, 1d6+1 колющего. Стена щитов.',
+    notes: 'Держит строй и защищает союзников.',
+    actionsAndAttacks: 'Копье: +3 к атаке, 1d6+1 колющего урона.\nСтена щитов.',
+  },
+};
+
+function migrateLegacyTemplates(templates: CreatureTemplate[]): {
+  templates: CreatureTemplate[];
+  changed: boolean;
+} {
+  let changed = false;
+  const migrated = templates.map((template) => {
+    const split = LEGACY_DEFAULT_TEMPLATE_SPLITS[template.id];
+    if (
+      !split ||
+      template.actionsAndAttacks ||
+      template.notes !== split.legacyNotes
+    ) {
+      return template;
+    }
+    changed = true;
+    return {
+      ...template,
+      notes: split.notes,
+      actionsAndAttacks: split.actionsAndAttacks,
+    };
+  });
+  return { templates: changed ? migrated : templates, changed };
+}
+
 // Safe JSON Parse
 function safeParse<T>(key: string, fallback: T): T {
   try {
@@ -61,7 +118,10 @@ export const Storage = {
       this.saveTemplates(defaults);
       return defaults;
     }
-    return safeParse<CreatureTemplate[]>(STORAGE_KEYS.TEMPLATES, []);
+    const stored = safeParse<CreatureTemplate[]>(STORAGE_KEYS.TEMPLATES, []);
+    const { templates, changed } = migrateLegacyTemplates(stored);
+    if (changed) this.saveTemplates(templates);
+    return templates;
   },
 
   saveTemplates(templates: CreatureTemplate[]): void {
