@@ -119,5 +119,5 @@ export interface AppDataExport {
   templates: CreatureTemplate[];
   party: PartyMember[];
   encounters: Encounter[];
-  activeCombat?: ActiveCombatState;
+  activeCombat?: ActiveCombatState | null;
 }

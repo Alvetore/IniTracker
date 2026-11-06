@@ -107,7 +107,9 @@ export const Storage = {
       templates: this.getTemplates(),
       party: this.getParty(),
       encounters: this.getEncounters(),
-      activeCombat: this.getCombatState() || undefined,
+      // Keep the key even when there is no active combat: on import an explicit
+      // null means "clear the current fight", while a missing key would keep it.
+      activeCombat: this.getCombatState(),
     };
     return JSON.stringify(exportData, null, 2);
   },
@@ -138,17 +140,39 @@ export const Storage = {
 
       const data = parsed as Partial<AppDataExport> & { activeCombat?: unknown };
 
-      if (Array.isArray(data.templates)) {
-        this.saveTemplates(data.templates);
-      }
-      if (Array.isArray(data.party)) {
-        this.saveParty(data.party);
-      }
-      if (Array.isArray(data.encounters)) {
-        this.saveEncounters(data.encounters);
-      }
-      if ('activeCombat' in data) {
-        this.saveCombatState((data.activeCombat ?? null) as ActiveCombatState | null);
+      // A backup is a full snapshot: sections missing from the file are
+      // restored as empty instead of silently keeping data from the old save.
+      const nextValues: Array<[string, string]> = [
+        [STORAGE_KEYS.TEMPLATES, JSON.stringify(Array.isArray(data.templates) ? data.templates : [])],
+        [STORAGE_KEYS.PARTY, JSON.stringify(Array.isArray(data.party) ? data.party : [])],
+        [
+          STORAGE_KEYS.ENCOUNTERS,
+          JSON.stringify(Array.isArray(data.encounters) ? data.encounters : []),
+        ],
+        [STORAGE_KEYS.COMBAT, JSON.stringify(data.activeCombat ?? null)],
+      ];
+
+      const previous = new Map<string, string | null>();
+      try {
+        for (const [key] of nextValues) previous.set(key, localStorage.getItem(key));
+        for (const [key, value] of nextValues) localStorage.setItem(key, value);
+      } catch (error: unknown) {
+        // Roll back a partially written import when localStorage is full or
+        // unavailable, and tell the user instead of reporting a false success.
+        for (const [key, value] of previous) {
+          try {
+            if (value === null) localStorage.removeItem(key);
+            else localStorage.setItem(key, value);
+          } catch {
+            console.error(`Failed to roll back localStorage key "${key}"`);
+          }
+        }
+        return {
+          success: false,
+          error: `Не удалось сохранить данные: ${
+            error instanceof Error ? error.message : 'ошибка localStorage'
+          }`,
+        };
       }
 
       return { success: true };

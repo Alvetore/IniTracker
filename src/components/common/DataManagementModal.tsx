@@ -43,7 +43,10 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      if (!content) return;
+      if (!content) {
+        setStatusMsg({ text: 'Выбранный файл пуст', error: true });
+        return;
+      }
 
       if (
         !window.confirm(
@@ -117,7 +120,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose, onDataRe
           )}
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            Все ваши партии, существа и энкаунтеры автоматически сохраняются в браузере (LocalStorage). Вы можете экспортировать их в единый JSON-файл для переноса на другое устройство или создания резервной копии.
+            Все ваши партии, существа, энкаунтеры и активный бой автоматически сохраняются в браузере (LocalStorage). Вы можете экспортировать их в единый JSON-файл для переноса на другое устройство или создания резервной копии. Импорт полностью заменяет текущие данные содержимым файла.
           </p>
 
           <div className="space-y-2.5">
