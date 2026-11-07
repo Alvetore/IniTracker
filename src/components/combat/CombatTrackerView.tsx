@@ -1207,7 +1207,7 @@ export const CombatTrackerView: React.FC<Props> = ({
           </div>
 
           {/* Combatants List (Ordered by Turn / Initiative) */}
-          <div className="space-y-2.5">
+          <div className="space-y-1.5 sm:space-y-2.5">
             {combatants.map((combatant, index) => {
               if (!showDefeated && combatant.isDefeated) return null;
 
@@ -1246,11 +1246,11 @@ export const CombatTrackerView: React.FC<Props> = ({
                     </div>
                   )}
 
-                  <div className="p-2 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1.5 sm:gap-3">
+                  <div className="p-1.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 sm:gap-3">
                     {/* Left: Initiative, Name, AC, Badges */}
                     <div className="flex items-center gap-2.5 sm:gap-3.5">
                       {/* Initiative Badge with Up/Down buttons */}
-                      <div className="flex flex-col items-center shrink-0">
+                      <div className="flex flex-row sm:flex-col items-center shrink-0">
                         <button
                           onClick={() => handleMoveOrder(index, 'up')}
                           disabled={index === 0}
@@ -1363,13 +1363,13 @@ export const CombatTrackerView: React.FC<Props> = ({
 
                     {/* Middle: Health (HP) bar & Quick Modifiers */}
                     <div className="w-full md:flex-1 md:max-w-sm">
-                      <div className="flex items-center justify-between text-xs mb-1 font-semibold">
-                        <span className="flex items-center gap-1 text-slate-400">
+                      <div className="flex items-center gap-2 text-xs font-semibold mb-1">
+                        <span className="flex items-center gap-1 text-slate-400 shrink-0">
                           <Heart className="w-3.5 h-3.5 text-rose-400" /> HP:
                         </span>
                         <button
                           onClick={() => setHpModalCombatant(combatant)}
-                          className="font-bold text-xs sm:text-sm text-white hover:text-amber-400 transition"
+                          className="font-bold text-xs sm:text-sm text-white hover:text-amber-400 transition shrink-0 whitespace-nowrap"
                           title="Изменить здоровье"
                         >
                           {combatant.hp.current} / {combatant.hp.max}
@@ -1377,18 +1377,18 @@ export const CombatTrackerView: React.FC<Props> = ({
                             <span className="text-cyan-400 ml-1">+{combatant.hp.temp} темп</span>
                           )}
                         </button>
-                      </div>
 
-                      {/* Visual Bar */}
-                      <div
-                        onClick={() => setHpModalCombatant(combatant)}
-                        className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800 cursor-pointer"
-                        title="Кликните для ввода урона или лечения"
-                      >
+                        {/* Visual Bar */}
                         <div
-                          className={`h-full transition-all duration-300 ${getHpColor()}`}
-                          style={{ width: `${hpPercent}%` }}
-                        />
+                          onClick={() => setHpModalCombatant(combatant)}
+                          className="flex-1 min-w-0 bg-slate-950 rounded-full h-2.5 sm:h-3 overflow-hidden border border-slate-800 cursor-pointer"
+                          title="Кликните для ввода урона или лечения"
+                        >
+                          <div
+                            className={`h-full transition-all duration-300 ${getHpColor()}`}
+                            style={{ width: `${hpPercent}%` }}
+                          />
+                        </div>
                       </div>
 
                       {/* Quick inline buttons */}
@@ -1421,7 +1421,7 @@ export const CombatTrackerView: React.FC<Props> = ({
                     </div>
 
                     {/* Right: Conditions, Toggles, Actions */}
-                    <div className="flex flex-wrap items-center justify-between md:justify-end gap-2 pt-1 md:pt-0 border-t md:border-t-0 border-slate-800/80">
+                    <div className="flex flex-wrap items-center justify-between md:justify-end gap-1.5 pt-0.5 md:pt-0 border-t md:border-t-0 border-slate-800/80">
                       {/* Active Condition badges */}
                       <div className="flex flex-wrap gap-1 items-center flex-1 md:flex-initial">
                         {combatant.conditions.map((cond) => (
