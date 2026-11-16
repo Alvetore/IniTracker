@@ -251,4 +251,20 @@ describe('CombatTrackerView turn handling', () => {
     expect(screen.getByText(noteText)).toBeInTheDocument();
     expect(screen.getByText(actionText)).toBeInTheDocument();
   });
+
+  it('labels neutral and hazard combatants distinctly in active combat', () => {
+    renderTracker(
+      state({
+        isActive: true,
+        currentTurnIndex: 0,
+        combatants: [
+          combatant({ id: 'neutral', name: 'Наёмник', type: 'neutral' }),
+          combatant({ id: 'hazard', name: 'Лавина', type: 'hazard' }),
+        ],
+      })
+    );
+
+    expect(screen.getByText('Нейтрал')).toBeInTheDocument();
+    expect(screen.getByText('Событие')).toBeInTheDocument();
+  });
 });

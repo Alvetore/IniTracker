@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Storage as AppStorage } from './storage';
+import { Storage as AppStorage, onStorageSaveError } from './storage';
 import { ActiveCombatState, CreatureTemplate, Encounter, PartyMember, SavedCondition } from '../types';
 
 let store: Map<string, string>;
@@ -274,5 +274,22 @@ describe('Storage.importAll', () => {
       success: true,
     });
     expect(AppStorage.getCombatState()).toBeNull();
+  });
+});
+
+describe('onStorageSaveError', () => {
+  it('notifies subscribers when a regular save fails and supports unsubscribe', () => {
+    const handler = vi.fn();
+    const unsubscribe = onStorageSaveError(handler);
+
+    failOnKey = 'dnd_init_templates_v1';
+    AppStorage.saveTemplates([template]);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith('dnd_init_templates_v1', expect.any(Error));
+
+    unsubscribe();
+    AppStorage.saveTemplates([template]);
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 });
