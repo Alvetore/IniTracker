@@ -40,6 +40,15 @@ export const AddCombatantModal: React.FC<Props> = ({
     }
   }, [isOpen, templates, party, selectedTemplateId, selectedPartyId]);
 
+  // The default 'template' tab is unusable with an empty bestiary: its submit
+  // path silently does nothing. Switch to a workable mode on open.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (mode === 'template' && templates.length === 0) {
+      setMode(party.length > 0 ? 'party' : 'custom');
+    }
+  }, [isOpen, mode, templates.length, party.length]);
+
   // Custom fields
   const [customName, setCustomName] = useState('');
   const [customType, setCustomType] = useState<CreatureType>('enemy');
