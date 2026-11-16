@@ -45,7 +45,8 @@ export const App: React.FC = () => {
 
   // Theme state
   const [currentTheme, setCurrentTheme] = useState<ThemeId>(() => {
-    return (localStorage.getItem('ttrpg_theme_v1') as ThemeId) || 'fantasy';
+    const stored = localStorage.getItem('ttrpg_theme_v1');
+    return THEMES.some((theme) => theme.id === stored) ? (stored as ThemeId) : 'fantasy';
   });
   const [isThemeOpen, setIsThemeOpen] = useState(false);
 
