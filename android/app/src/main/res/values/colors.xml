@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark app background for the window behind the WebView: visible in
+         the system bar zones (legacy inset mode) instead of the theme's
+         light default. Matches the app's slate-950. -->
+    <color name="window_background">#020617</color>
+    <!-- Palette referenced by AppTheme. -->
+    <color name="colorPrimary">#f59e0b</color>
+    <color name="colorPrimaryDark">#b45309</color>
+    <color name="colorAccent">#f59e0b</color>
+</resources>

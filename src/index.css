@@ -9,6 +9,20 @@ html, body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+/* Edge-to-edge on Android 15+/modern WebViews (viewport-fit=cover): the
+   sticky header spans the status bar zone itself, sides and bottom are
+   padded on body. env(...) is 0 on desktop and in Capacitor's legacy
+   padding mode, so this is a no-op everywhere else. */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+header.sticky {
+  padding-top: env(safe-area-inset-top);
+}
+
 button, a, input, select, textarea {
   touch-action: manipulation;
 }

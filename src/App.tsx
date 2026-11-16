@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import {
   CreatureTemplate,
   PartyMember,
@@ -35,6 +36,12 @@ const CombatTrackerView = lazy(() =>
     default: module.CombatTrackerView,
   }))
 );
+
+/** Built-in Capacitor plugin (Android): status/gesture bar icon appearance. */
+interface SystemBarsPlugin {
+  setStyle(options: { style: 'LIGHT' | 'DARK' | 'DEFAULT' }): Promise<void>;
+}
+const SystemBars = registerPlugin<SystemBarsPlugin>('SystemBars');
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('combat');
@@ -78,6 +85,15 @@ export const App: React.FC = () => {
       document.body.classList.add('dark');
     }
     localStorage.setItem('ttrpg_theme_v1', currentTheme);
+
+    // Android: keep the status bar icons readable over the header.
+    // 'DARK' = white icons for the dark themes; parchment is light, so it
+    // needs dark icons ('LIGHT' in SystemBars terms).
+    if (Capacitor.isNativePlatform()) {
+      void SystemBars.setStyle({
+        style: currentTheme === 'parchment' ? 'LIGHT' : 'DARK',
+      }).catch(() => undefined);
+    }
   }, [currentTheme]);
 
   // Load initial data
@@ -607,7 +623,7 @@ export const App: React.FC = () => {
   return (
     <div
       data-theme={currentTheme}
-      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-300"
+      className="min-h-dvh bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-300"
     >
       {/* Storage quota warning */}
       {storageWarning && (
