@@ -12,6 +12,15 @@ import {
 import { rollInitiativeForSystem } from '../../utils/dice';
 import { sortCombatantsPreservingTurn, findNextTurn, isCombatantEligibleForTurn } from '../../utils/combatUtils';
 import { getCreatureTypeMeta } from '../../utils/creatureType';
+import {
+  applyMoveOrder,
+  applyNextTurn,
+  applyPrevTurn,
+  applyRemoveCombatant,
+  applyToggleDelay,
+  buildResetCombat,
+  buildStartCombat,
+} from '../../utils/turnEngine';
 import { ConditionPickerModal } from './ConditionPickerModal';
 import { HpAdjustModal } from './HpAdjustModal';
 import { AddCombatantModal } from './AddCombatantModal';
@@ -286,37 +295,8 @@ export const CombatTrackerView: React.FC<Props> = ({
 
   // Start Combat (sort by initiative descending)
   const handleStartCombat = () => {
-    if (!combatState || combatState.combatants.length === 0) return;
-
-    const { sortedCombatants } = sortCombatantsPreservingTurn(combatState.combatants, 0, false);
-    const preparedCombatants = sortedCombatants.map((combatant) =>
-      combatant.isDelayed ? { ...combatant, isDelayed: false } : combatant
-    );
-    const firstTurn = findNextTurn(preparedCombatants, -1);
-    if (!firstTurn) return;
-    const firstTurnIndex = firstTurn.index;
-    const firstCombatant = preparedCombatants[firstTurnIndex];
-
-    const newLog = [
-      {
-        id: String(Date.now()),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        round: 1,
-        message: `Бой начался! Раунд 1. Первый ходит: ${firstCombatant.name} (инициатива ${firstCombatant.initiative})`,
-        type: 'round' as const,
-      },
-      ...combatState.log,
-    ];
-
-    onUpdateCombatState({
-      ...combatState,
-      isActive: true,
-      round: 1,
-      currentTurnIndex: firstTurnIndex,
-      combatants: preparedCombatants,
-      log: newLog,
-      turnHistory: [],
-    });
+    if (!combatState) return;
+    onUpdateCombatState(buildStartCombat(combatState));
   };
 
   // Re-sort combatants by initiative descending, preserving active turn
@@ -395,168 +375,21 @@ export const CombatTrackerView: React.FC<Props> = ({
 
   // Next Turn
   const handleNextTurn = () => {
-    if (!combatState || combatState.combatants.length === 0) return;
-
-    const activeCombatants = combatState.combatants;
-
-    const nextTurn = findNextTurn(activeCombatants, combatState.currentTurnIndex);
-    if (!nextTurn) return;
-
-    const nextIndex = nextTurn.index;
-    const nextRound = combatState.round + nextTurn.roundIncrement;
-
-    // Check if round finished
-    const logMsg =
-      nextTurn.roundIncrement > 0 ? `--- НАЧАЛО РАУНДА ${nextRound} ---` : '';
-
-    // Decrement conditions for the combatant finishing their turn
-    const currentCombatant = activeCombatants[combatState.currentTurnIndex];
-    const conditionsBefore = currentCombatant
-      ? currentCombatant.conditions.map((condition) => ({ ...condition }))
-      : [];
-    let updatedCombatants = [...activeCombatants];
-
-    if (currentCombatant) {
-      const updatedConditions = currentCombatant.conditions
-        .map((cond) => {
-          if (cond.roundsRemaining !== null) {
-            return { ...cond, roundsRemaining: cond.roundsRemaining - 1 };
-          }
-          return cond;
-        })
-        .filter((cond) => cond.roundsRemaining === null || cond.roundsRemaining > 0);
-
-      updatedCombatants = updatedCombatants.map((c, i) =>
-        i === combatState.currentTurnIndex ? { ...c, conditions: updatedConditions } : c
-      );
-    }
-
-    let nextCombatant = updatedCombatants[nextIndex];
-    let delayCompleted = false;
-    if (nextCombatant.isDelayed) {
-      delayCompleted = true;
-      updatedCombatants = updatedCombatants.map((c, i) =>
-        i === nextIndex ? { ...c, isDelayed: false } : c
-      );
-      nextCombatant = updatedCombatants[nextIndex];
-    }
-    const turnMsg = `Ход перешел к: ${nextCombatant.name} (Инициатива ${nextCombatant.initiative})${delayCompleted ? ' — задержка завершена' : ''}`;
-
-    const turnHistory = [
-      ...(combatState.turnHistory ?? []),
-      {
-        fromCombatantId: currentCombatant?.id,
-        toCombatantId: nextCombatant.id,
-        fromRound: combatState.round,
-        toRound: nextRound,
-        conditionsBefore,
-        delayedClearedId: delayCompleted ? nextCombatant.id : undefined,
-      },
-    ].slice(-50);
-
-    const logsToAdd: CombatLogEntry[] = [];
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    if (logMsg) {
-      logsToAdd.push({
-        id: `round-${Date.now()}`,
-        timestamp: timeStr,
-        round: nextRound,
-        message: logMsg,
-        type: 'round',
-      });
-    }
-    logsToAdd.push({
-      id: `turn-${Date.now()}`,
-      timestamp: timeStr,
-      round: nextRound,
-      message: turnMsg,
-      type: 'turn',
-    });
-
-    onUpdateCombatState({
-      ...combatState,
-      round: nextRound,
-      currentTurnIndex: nextIndex,
-      combatants: updatedCombatants,
-      log: [...logsToAdd, ...combatState.log.slice(0, 48)],
-      turnHistory,
-    });
+    if (!combatState) return;
+    onUpdateCombatState(applyNextTurn(combatState));
   };
 
   // Prev Turn
   const handlePrevTurn = () => {
-    if (!combatState || combatState.combatants.length === 0) return;
-
-    const history = combatState.turnHistory ?? [];
-    const snapshot = history[history.length - 1];
-    const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
-
-    if (
-      snapshot &&
-      currentCombatant?.id === snapshot.toCombatantId &&
-      combatState.round === snapshot.toRound
-    ) {
-      const restoredCombatants = combatState.combatants.map((combatant) => {
-        let restored = combatant;
-        if (snapshot.fromCombatantId && combatant.id === snapshot.fromCombatantId) {
-          restored = {
-            ...restored,
-            conditions: snapshot.conditionsBefore.map((condition) => ({ ...condition })),
-          };
-        }
-        if (snapshot.delayedClearedId && combatant.id === snapshot.delayedClearedId) {
-          restored = { ...restored, isDelayed: true };
-        }
-        return restored;
-      });
-
-      const restoredIndex = snapshot.fromCombatantId
-        ? restoredCombatants.findIndex((combatant) => combatant.id === snapshot.fromCombatantId)
-        : -1;
-
-      onUpdateCombatState({
-        ...combatState,
-        round: snapshot.fromRound,
-        currentTurnIndex:
-          restoredIndex !== -1
-            ? restoredIndex
-            : Math.max(0, combatState.currentTurnIndex - 1),
-        combatants: restoredCombatants,
-        turnHistory: history.slice(0, -1),
-      });
-      return;
-    }
-
-    let prevIndex = combatState.currentTurnIndex - 1;
-    let prevRound = combatState.round;
-
-    if (prevIndex < 0) {
-      prevIndex = combatState.combatants.length - 1;
-      prevRound = Math.max(1, prevRound - 1);
-    }
-
-    onUpdateCombatState({
-      ...combatState,
-      round: prevRound,
-      currentTurnIndex: prevIndex,
-    });
+    if (!combatState) return;
+    onUpdateCombatState(applyPrevTurn(combatState));
   };
 
   // Reset Combat
   const handleResetCombat = () => {
     if (confirm('Сбросить текущий бой и вернуть порядок в режим подготовки?')) {
       if (combatState) {
-        onUpdateCombatState({
-          ...combatState,
-          isActive: false,
-          round: 1,
-          currentTurnIndex: 0,
-          combatants: combatState.combatants.map((combatant) =>
-            combatant.isDelayed ? { ...combatant, isDelayed: false } : combatant
-          ),
-          turnHistory: [],
-        });
+        onUpdateCombatState(buildResetCombat(combatState));
       }
     }
   };
@@ -597,140 +430,20 @@ export const CombatTrackerView: React.FC<Props> = ({
   // Remove combatant
   const handleRemoveCombatant = (id: string) => {
     if (!combatState) return;
-    const idx = combatState.combatants.findIndex((c) => c.id === id);
-    const updated = combatState.combatants.filter((c) => c.id !== id);
-
-    let nextTurnIndex = combatState.currentTurnIndex;
-    let nextRound = combatState.round;
-    if (updated.length === 0) {
-      nextTurnIndex = 0;
-      nextRound = 1;
-    } else if (combatState.isActive && idx === combatState.currentTurnIndex) {
-      // Removing the active combatant passes the turn to the next eligible
-      // participant, skipping defeated NPCs and wrapping the round if needed.
-      const next = findNextTurn(updated, idx - 1);
-      if (next) {
-        nextTurnIndex = next.index;
-        nextRound += next.roundIncrement;
-      } else {
-        nextTurnIndex = 0;
-      }
-    } else if (idx < combatState.currentTurnIndex) {
-      nextTurnIndex = Math.max(0, nextTurnIndex - 1);
-    } else if (nextTurnIndex >= updated.length) {
-      nextTurnIndex = 0;
-    }
-
-    onUpdateCombatState({
-      ...combatState,
-      isActive: updated.length === 0 ? false : combatState.isActive,
-      round: nextRound,
-      combatants: updated,
-      currentTurnIndex: nextTurnIndex,
-    });
+    onUpdateCombatState(applyRemoveCombatant(combatState, id));
   };
 
   // Delay = move the combatant to the end of the current round. The badge
   // stays until their postponed turn actually starts.
   const handleToggleDelay = (combatantId: string) => {
     if (!combatState) return;
-    const target = combatState.combatants.find((c) => c.id === combatantId);
-    if (!target) return;
-
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const makeLog = (message: string): CombatLogEntry => ({
-      id: `delay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      timestamp: timeStr,
-      round: combatState.round,
-      message,
-      type: 'system',
-    });
-
-    if (target.isDelayed) {
-      onUpdateCombatState({
-        ...combatState,
-        combatants: combatState.combatants.map((c) =>
-          c.id === combatantId ? { ...c, isDelayed: false } : c
-        ),
-        log: [makeLog(`${target.name} снова в очереди хода`), ...combatState.log],
-      });
-      return;
-    }
-
-    if (!combatState.isActive) {
-      onUpdateCombatState({
-        ...combatState,
-        combatants: combatState.combatants.map((c) =>
-          c.id === combatantId ? { ...c, isDelayed: true } : c
-        ),
-        log: [makeLog(`${target.name} отмечен как задержавший ход`), ...combatState.log],
-      });
-      return;
-    }
-
-    const activeId = combatState.combatants[combatState.currentTurnIndex]?.id;
-    const fromIndex = combatState.combatants.findIndex((c) => c.id === combatantId);
-    const reordered = [...combatState.combatants];
-    const [moved] = reordered.splice(fromIndex, 1);
-    reordered.push({ ...moved, isDelayed: true });
-
-    let nextTurnIndex: number;
-    if (activeId === combatantId) {
-      const movedIndex = reordered.length - 1;
-      const nextEligible = reordered.findIndex(
-        (combatant, index) =>
-          index >= fromIndex && index < movedIndex && isCombatantEligibleForTurn(combatant)
-      );
-      if (nextEligible !== -1) {
-        nextTurnIndex = nextEligible;
-      } else {
-        // Nobody else can act before the delayed combatant. Keep the turn on
-        // them and clear the marker so it cannot stay stuck forever.
-        nextTurnIndex = movedIndex;
-        reordered[movedIndex] = { ...reordered[movedIndex], isDelayed: false };
-      }
-    } else {
-      const activeIndex = reordered.findIndex((c) => c.id === activeId);
-      nextTurnIndex =
-        activeIndex !== -1
-          ? activeIndex
-          : Math.max(0, Math.min(combatState.currentTurnIndex, reordered.length - 1));
-    }
-
-    onUpdateCombatState({
-      ...combatState,
-      combatants: reordered,
-      currentTurnIndex: nextTurnIndex,
-      log: [
-        makeLog(`${target.name} задерживает ход и переносится в конец раунда`),
-        ...combatState.log,
-      ],
-    });
+    onUpdateCombatState(applyToggleDelay(combatState, combatantId));
   };
 
   // Move combatant up/down
   const handleMoveOrder = (index: number, direction: 'up' | 'down') => {
     if (!combatState) return;
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= combatState.combatants.length) return;
-
-    const list = [...combatState.combatants];
-    const [moved] = list.splice(index, 1);
-    list.splice(targetIndex, 0, moved);
-
-    // Adjust turn index if current active was moved
-    let newTurn = combatState.currentTurnIndex;
-    if (combatState.currentTurnIndex === index) {
-      newTurn = targetIndex;
-    } else if (combatState.currentTurnIndex === targetIndex) {
-      newTurn = index;
-    }
-
-    onUpdateCombatState({
-      ...combatState,
-      combatants: list,
-      currentTurnIndex: newTurn,
-    });
+    onUpdateCombatState(applyMoveOrder(combatState, index, direction));
   };
 
   // Apply HP change from modal
