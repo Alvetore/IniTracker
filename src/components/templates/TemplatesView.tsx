@@ -3,6 +3,7 @@ import { CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { CatalogMonster, BestiarySection } from '../../types/bestiary';
 import { convertCatalogMonsterToTemplate } from '../../utils/catalogToTemplate';
 import { getCreatureTypeMeta } from '../../utils/creatureType';
+import { pluralize } from '../../utils/plural';
 import {
   CatalogFilterOptions,
   CATALOG_SIZE_OPTIONS,
@@ -50,6 +51,8 @@ const CATALOG_COUNTS: Record<'5e14' | '5e24', number> = {
   '5e24': 657,
   '5e14': 2875,
 };
+
+const CREATURE_FORMS: [string, string, string] = ['существо', 'существа', 'существ'];
 
 interface Props {
   templates: CreatureTemplate[];
@@ -810,10 +813,14 @@ export const TemplatesView: React.FC<Props> = ({
                 </span>
                 <span className="text-xs text-slate-400">
                   {isCatalogLoading || catalogError
-                    ? `${CATALOG_COUNTS[activeSection]} существ в каталоге`
-                    : `${filteredCatalogMonsters.length} ${
-                        filteredCatalogMonsters.length === 1 ? 'существо' : 'существ'
-                      }`}
+                    ? `${CATALOG_COUNTS[activeSection]} ${pluralize(
+                        CATALOG_COUNTS[activeSection],
+                        CREATURE_FORMS
+                      )} в каталоге`
+                    : `${filteredCatalogMonsters.length} ${pluralize(
+                        filteredCatalogMonsters.length,
+                        CREATURE_FORMS
+                      )}`}
                 </span>
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-white font-rpg tracking-wide flex items-center gap-2">

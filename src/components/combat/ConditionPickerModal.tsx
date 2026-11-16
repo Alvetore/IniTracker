@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Condition, Combatant, SavedCondition } from '../../types';
 import { STANDARD_CONDITIONS } from '../../utils/defaultData';
+import { pluralize } from '../../utils/plural';
 import { Storage } from '../../utils/storage';
 import { useDialogAccessibility } from '../../utils/useDialogAccessibility';
 import { X, Sparkles, Clock, Plus, Search, Check, AlertCircle, Trash2, Bookmark } from 'lucide-react';
@@ -55,13 +56,7 @@ const CONDITION_ICONS = [
 
 function formatRounds(rounds: number | null): string {
   if (rounds === null) return 'Бессрочно';
-  const mod10 = rounds % 10;
-  const mod100 = rounds % 100;
-  if (mod10 === 1 && mod100 !== 11) return `${rounds} раунд`;
-  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) {
-    return `${rounds} раунда`;
-  }
-  return `${rounds} раундов`;
+  return `${rounds} ${pluralize(rounds, ['раунд', 'раунда', 'раундов'])}`;
 }
 
 export const ConditionPickerModal: React.FC<Props> = ({
