@@ -129,13 +129,15 @@ export const App: React.FC = () => {
     Storage.saveCombatState(normalizedState);
 
     // A party member's card follows the HP of its combatant instances.
+    // Computed outside setParty: state updaters must stay pure (StrictMode
+    // invokes them twice), and `party` from this render is as fresh as the
+    // combatState used above.
     if (normalizedState) {
-      setParty((currentParty) => {
-        const updatedParty = syncPartyHpWithCombat(currentParty, normalizedState.combatants);
-        if (!updatedParty) return currentParty;
+      const updatedParty = syncPartyHpWithCombat(party, normalizedState.combatants);
+      if (updatedParty) {
         Storage.saveParty(updatedParty);
-        return updatedParty;
-      });
+        setParty(updatedParty);
+      }
     }
   };
 
