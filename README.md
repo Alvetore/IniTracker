@@ -69,6 +69,31 @@ npm run build
 ```
 Скомпилированные статические файлы будут находиться в папке `dist/`.
 
+---
+
+## 🖥️ 📱 Локальные сборки: Windows exe и Android APK
+
+Приложение упаковывается как есть (все данные остаются в локальном хранилище устройства) — веб-часть общая для всех платформ.
+
+### Windows (portable exe, Electron)
+```bash
+npm run electron:build
+```
+Готовый файл: `release/IniTracker-Portable-<версия>.exe` — один исполняемый файл без установки. Для запуска в окне Electron из исходников: `npm run electron:start`.
+
+### Android (debug APK, Capacitor)
+Требуется Android SDK (platform 35) и JDK 17–21 (например, JBR из состава Android Studio):
+```bash
+npm run android:apk
+```
+Готовый файл: `android/app/build/outputs/apk/debug/app-debug.apk` — переносится на телефон и устанавливается как обычное приложение (для отладочной установки разрешите «неизвестные источники»). Открывать проект удобно также в Android Studio (папка `android/`).
+
+### Иконки
+Все иконки (exe + все плотности Android) генерируются из одного `public/favicon.svg`:
+```bash
+npm run icons
+```
+
 ### Проверка качества
 ```bash
 npm run typecheck   # проверка TypeScript

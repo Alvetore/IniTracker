@@ -1,0 +1,17 @@
+appId: com.alvetore.initracker
+productName: IniTracker
+directories:
+  output: release
+# The Vite bundle in dist/ is fully self-contained, so production
+# node_modules are deliberately excluded to keep the exe small.
+files:
+  - electron/**/*
+  - dist/**/*
+  - "!**/node_modules/**/*"
+win:
+  icon: build/icon.png
+  target:
+    - target: portable
+      arch:
+        - x64
+  artifactName: IniTracker-Portable-${version}.exe
