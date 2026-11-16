@@ -11,6 +11,7 @@ import {
 } from '../../types';
 import { rollInitiativeForSystem } from '../../utils/dice';
 import { sortCombatantsPreservingTurn, findNextTurn, isCombatantEligibleForTurn } from '../../utils/combatUtils';
+import { getCreatureTypeMeta } from '../../utils/creatureType';
 import { ConditionPickerModal } from './ConditionPickerModal';
 import { HpAdjustModal } from './HpAdjustModal';
 import { AddCombatantModal } from './AddCombatantModal';
@@ -1048,13 +1049,7 @@ export const CombatTrackerView: React.FC<Props> = ({
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <span
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                      c.type === 'player'
-                        ? 'bg-blue-400'
-                        : c.type === 'enemy'
-                        ? 'bg-red-400'
-                        : 'bg-emerald-400'
-                    }`}
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${getCreatureTypeMeta(c.type).dotCls}`}
                   />
                   <div className="truncate">
                     <div className="text-sm font-bold text-white truncate">{c.name}</div>
@@ -1340,18 +1335,10 @@ export const CombatTrackerView: React.FC<Props> = ({
                         <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
                           <span
                             className={`px-1.5 py-0.2 rounded text-[9px] sm:text-[10px] font-bold uppercase border ${
-                              combatant.type === 'player'
-                                ? 'border-blue-800/80 bg-blue-950/60 text-blue-300'
-                                : combatant.type === 'enemy'
-                                ? 'border-red-800/80 bg-red-950/60 text-red-300'
-                                : 'border-emerald-800/80 bg-emerald-950/60 text-emerald-300'
+                              getCreatureTypeMeta(combatant.type).badgeCls
                             }`}
                           >
-                            {combatant.type === 'player'
-                              ? 'Герой'
-                              : combatant.type === 'enemy'
-                              ? 'Враг'
-                              : 'Союзник'}
+                            {getCreatureTypeMeta(combatant.type).combatLabel}
                           </span>
 
                           <span className="flex items-center gap-1 font-semibold text-slate-300 text-xs">

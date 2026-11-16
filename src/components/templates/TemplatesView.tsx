@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
 import { CreatureTemplate, CreatureType, DiceSystem } from '../../types';
 import { CatalogMonster, BestiarySection } from '../../types/bestiary';
 import { convertCatalogMonsterToTemplate } from '../../utils/catalogToTemplate';
+import { getCreatureTypeMeta } from '../../utils/creatureType';
 import {
   CatalogFilterOptions,
   CATALOG_SIZE_OPTIONS,
@@ -304,19 +305,8 @@ export const TemplatesView: React.FC<Props> = ({
   };
 
   const getTypeBadge = (type: CreatureType) => {
-    switch (type) {
-      case 'enemy':
-        return { label: 'Враг', cls: 'bg-red-950/60 text-red-400 border-red-800/60' };
-      case 'ally':
-        return { label: 'Союзник', cls: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60' };
-      case 'neutral':
-        return { label: 'Нейтрал', cls: 'bg-amber-950/60 text-amber-400 border-amber-800/60' };
-      case 'hazard':
-        return { label: 'Событие / Ловушка', cls: 'bg-purple-950/60 text-purple-400 border-purple-800/60' };
-      case 'player':
-      default:
-        return { label: 'Игрок', cls: 'bg-blue-950/60 text-blue-400 border-blue-800/60' };
-    }
+    const meta = getCreatureTypeMeta(type);
+    return { label: meta.label, cls: meta.badgeCls };
   };
 
   return (
