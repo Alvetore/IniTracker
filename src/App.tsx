@@ -6,7 +6,7 @@ import {
   ActiveCombatState,
   Combatant,
 } from './types';
-import { Storage } from './utils/storage';
+import { Storage, onStorageSaveError } from './utils/storage';
 import { rollInitiativeForSystem } from './utils/dice';
 import { Header, ActiveTab } from './components/common/Header';
 import { DiceRollerModal } from './components/common/DiceRollerModal';
@@ -53,6 +53,18 @@ export const App: React.FC = () => {
   // Global modals
   const [isDiceOpen, setIsDiceOpen] = useState(false);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+
+  // localStorage quota overflow: saves stop working, so tell the user instead
+  // of failing silently while they keep playing.
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    return onStorageSaveError(() => {
+      setStorageWarning(
+        'Данные не сохраняются: хранилище браузера переполнено. Скачайте резервную копию и удалите лишних существ или энкаунтеры.'
+      );
+    });
+  }, []);
 
   // Apply theme to document
   useEffect(() => {
@@ -597,6 +609,33 @@ export const App: React.FC = () => {
       data-theme={currentTheme}
       className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-300"
     >
+      {/* Storage quota warning */}
+      {storageWarning && (
+        <div
+          role="alert"
+          className="bg-red-950/80 border-b border-red-800 px-3 sm:px-6 py-2.5 text-xs text-red-200 flex items-center justify-between gap-3"
+        >
+          <span className="min-w-0">{storageWarning}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsDataModalOpen(true)}
+              className="px-2.5 py-1.5 bg-red-900/60 hover:bg-red-900 border border-red-800 rounded-lg text-[11px] font-bold transition"
+            >
+              Бэкап
+            </button>
+            <button
+              type="button"
+              onClick={() => setStorageWarning(null)}
+              aria-label="Закрыть предупреждение"
+              className="p-1.5 hover:bg-red-900/60 rounded-lg transition"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sticky Header */}
       <Header
         activeTab={activeTab}

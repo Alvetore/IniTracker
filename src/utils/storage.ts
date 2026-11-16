@@ -89,12 +89,31 @@ function safeParse<T>(key: string, fallback: T): T {
   }
 }
 
-function safeSave<T>(key: string, data: T): void {
+function safeSave<T>(key: string, data: T): boolean {
   try {
     localStorage.setItem(key, JSON.stringify(data));
+    return true;
   } catch (err) {
     console.error(`Error saving key "${key}" to localStorage:`, err);
+    saveErrorListeners.forEach((handler) => handler(key, err));
+    return false;
   }
+}
+
+type SaveErrorHandler = (key: string, error: unknown) => void;
+
+const saveErrorListeners = new Set<SaveErrorHandler>();
+
+/**
+ * Subscribes to localStorage write failures (most commonly the ~5 MB quota).
+ * Without this a full quota means saves silently stop while the user keeps
+ * playing. Returns an unsubscribe function.
+ */
+export function onStorageSaveError(handler: SaveErrorHandler): () => void {
+  saveErrorListeners.add(handler);
+  return () => {
+    saveErrorListeners.delete(handler);
+  };
 }
 
 // Distinguishes "key never existed" from "user saved an empty array".
